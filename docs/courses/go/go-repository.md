@@ -10,6 +10,14 @@
 
 “依赖”指一个对象要调用另一个对象才能完成工作；“注入”指外部创建那个对象并传进去。不是后台自动发现数据库，也不是Go内置机制。
 
+### 就地练习：分别放到哪层
+
+将“HTTP400、SQL参数绑定、计算可预约数量”分别分给Handler、Repository、Service。
+
+### 参考核对：分别放到哪层
+
+Handler表达协议结果，Repository封装存储，Service表达业务规则；存储接口不应依赖HTTP状态。
+
 ## 完整例子：同一业务，换一个存储
 
 在已初始化的独立Go练习目录替换main.go：
@@ -70,6 +78,14 @@ main先创建Memory，再把它放进Service.store。调用service.Title后，Se
 
 **假存储只替换外部依赖，测试仍应调用真实Handler或Service。** 另写一份假业务函数来返回期望值，无法验证正在交付的业务逻辑。这里的Memory是完整演示实现，不等于已经测试PostgreSQL。
 
+### 就地练习：替身换什么
+
+测试注入返回固定标题的Store时，应该继续调用真实Service还是另写一个固定返回Web的Service？
+
+### 参考核对：替身换什么
+
+替换Store，仍调用真实Service；重写业务替身不能验证交付的业务。真实SQL仍需集成测试。
+
 ## 预测，再换实现
 
 自己增加 `Fixed` 类型，让GetTitle返回“Web”，把main里注入的Memory换为Fixed，Service保持不改。然后故意删掉Fixed的GetTitle方法，预测能否编译。
@@ -108,6 +124,7 @@ type Store interface { GetTitle() (string, error) }
 type Broken struct{}
 func (Broken) GetTitle() (string, error) { return "", errors.New("读取失败") }
 type Service struct { store Store }
+// 保留存储错误交给调用者，不把失败变成一个成功的空标题。
 func (s Service) Title() (string, error) { return s.store.GetTitle() }
 
 func main() {
@@ -123,3 +140,11 @@ func main() {
 ```output
 读取失败
 ```
+
+### 就地练习：错误签名同步变化
+
+GetTitle改成(string,error)后列出所有要同步的位置，给失败路径写出显示预期。
+
+### 参考核对：错误签名同步变化
+
+接口、实现、Service调用、Handler或main、测试都要跟随；失败明确报告，不吞成空标题。

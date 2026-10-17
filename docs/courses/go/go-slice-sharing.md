@@ -158,6 +158,7 @@ import "fmt"
 
 func main() {
 	original := []int{4, 7}
+	// 目标必须有实际长度，只有容量而长度为0时copy不会复制任何元素。
 	backup := make([]int, len(original))
 	copy(backup, original)
 	if len(original) > 0 {

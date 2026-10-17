@@ -10,6 +10,14 @@
 
 `sql.Open`建立池对象，未必连接。**用 `PingContext` 实际验证可连接，Open没有报错不等于数据库已经可用。**
 
+### 就地练习：池对象和真实连接
+
+假设数据库服务已停止，Open返回nil错误能证明什么？下一步必须检查哪个调用？
+
+### 参考核对：池对象和真实连接
+
+只说明池对象配置准备成功；PingContext才尝试验证连接，还要处理后续查询时的错误。
+
 ## 先准备文件与环境
 
 下载 [持久化API工程](assets/downloads/web-followup-09.zip)，解压并用VS Code打开followup-09。它已有go.mod/go.sum与pgx依赖，工具链需满足该go.mod的go行；运行 `go version`核对，按README准备依赖。不要在整个资料仓库初始化模块。
@@ -95,6 +103,14 @@ SQL文字里的单引号用两个单引号表示；Go参数里的标题不需要
 4. `QueryRowContext`执行预期返回一行的SQL，`Scan(&id)`将第一列写入id。查询失败、没有行或类型不匹配也由Scan报告。
 5. `$1`是参数位置，后面的标题对应它。**SQL结构固定，用户输入作为值单独传给驱动，不能用fmt.Sprintf拼入SQL。**
 
+### 就地练习：标题包含引号
+
+将输入标题设为中文 O'Reilly，保持SQL固定为$1参数。说明标题为什么不能拼到SQL中。
+
+### 参考核对：标题包含引号
+
+驱动把它作为一个值传入，引号不会改变语句结构；拼接会混合数据与SQL语法。
+
 ## 失败实验与完整 API
 
 先预测，将DATABASE_URL的端口改为一个确认没有数据库服务的端口，运行应报连接失败而不打印完整配置；恢复后执行。再将练习表名故意改错，应通过连接、失败于写入，不输出成功id。恢复后再次验证保存的文字。
@@ -123,6 +139,7 @@ QueryRowContext的查询错误通常延迟到Scan返回；无记录是sql.ErrNoR
 
 ```go
 var gotTitle string
+// $1只绑定值；查询执行错误、无行与列类型错误都要在Scan这里检查。
 err = db.QueryRowContext(ctx, "SELECT title FROM practice_problems WHERE id=$1", id).Scan(&gotTitle)
 if err != nil {
     fmt.Println("按id读取失败：", err)
@@ -132,3 +149,11 @@ fmt.Println(gotTitle)
 ```
 
 practice_problems与本节INSERT目标一致，不改成API的events。将绑定输入设为 `中文 O'Reilly`，应精确读回这段文字，单引号不改变SQL结构。无匹配行时Scan返回sql.ErrNoRows，应按失败/不存在合同处理。连接串和真实数据不进入提交。
+
+### 就地练习：没有行在哪报告
+
+查询一个确认不存在的练习id，预测QueryRowContext后Scan返回的错误类别。能否把空title当成功？
+
+### 参考核对：没有行在哪报告
+
+Scan返回sql.ErrNoRows；应按不存在处理，不以空标题冒充成功。池对象也不应每请求重新创建。

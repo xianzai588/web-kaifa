@@ -8,6 +8,14 @@
 
 本节沿用 [Go测试](#/learn/go/go-testing) 的 `_test.go`、`Test...` 和 `*testing.T`，再加入 `httptest`。没有使用新服务器、数据库或端口。
 
+### 就地练习：200下的坏结果
+
+保持200不变，分别把Content-Type改错、status改wrong。指出哪些断言应失败。
+
+### 参考核对：200下的坏结果
+
+媒体类型断言与关键字段断言分别检出；只验200会漏掉两种错误。
+
 ## 文件一：main.go，保存实际处理逻辑
 
 ```go
@@ -148,6 +156,7 @@ func TestAddContract(t *testing.T) {
         {"非数字", "/add?a=x&b=20", 400, "a and b"},
         {"超范围", "/add?a=10001&b=20", 400, "a and b"},
     }
+    // 同一处理函数接受不同外部输入；期望来自接口合同，不在测试里重写业务。
     for _, tc := range cases {
         t.Run(tc.name, func(t *testing.T) {
             rec := httptest.NewRecorder()
@@ -162,3 +171,11 @@ func TestAddContract(t *testing.T) {
 ```
 
 运行go test -count=1 ./...应通过。删掉add中a>10000与b>10000的范围检查，超范围测试必须失败；恢复后再次通过。四组测试针对处理逻辑，不代表已经验证真实监听或数据库。
+
+### 就地练习：证据覆盖到哪层
+
+列出直接调用health、经过Mux、NewServer加Client请求分别增加的覆盖。哪个检查路由？
+
+### 参考核对：证据覆盖到哪层
+
+直接调用检查响应业务；Mux还检查路径/方法；NewServer再覆盖本机HTTP往返。数据库、公网仍需独立证据。

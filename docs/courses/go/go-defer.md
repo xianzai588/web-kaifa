@@ -145,6 +145,7 @@ import "fmt"
 
 func Run(early bool) {
     n := 1
+    // 登记时把n=1作为参数保存；之后n=2不会改变这个参数。
     defer fmt.Println("登记值", n)
     defer fmt.Println("结束")
     fmt.Println("开始")

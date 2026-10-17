@@ -10,6 +10,14 @@
 
 随机盐是每个密码独立生成的随机数据，与密码一起参与计算，可以随哈希保存。同密码因为盐不同，应产生不同存储结果；盐不是密码，也不是靠保密保护账户的唯一秘密。
 
+### 就地练习：同密码为何不同存储串
+
+同一虚构密码哈希两次，预测字符串相等与验证结果。为什么不能重新哈希再比较文本？
+
+### 参考核对：同密码为何不同存储串
+
+独立随机盐使存储串不同，但用各自盐和参数验证原候选都应true。新随机哈希不能作相等比较。
+
 ## 使用已有维护的实现
 
 下载 [安全会话工程](assets/downloads/web-followup-10.zip)，解压，VS Code打开followup-10。已有go.mod/go.sum；Go工具链必须满足声明，运行go version核对，然后：
@@ -39,6 +47,14 @@ matched := verifyPassword(hash, candidate) // false应拒绝登录，不是返�
 ```
 
 Base64只是把字节表示成文字，便于保存，不是加密。项目使用维护库的算法核心，但解析和业务边界仍需要测试。密码哈希有成本，当前通过通道限制同时两项哈希；这不等于已实现完整抗攻击能力。
+
+### 就地练习：先校验格式再计算
+
+把“上限长度检查、拆格式、解码盐、Argon2计算、恒定时间比较”按执行顺序排列。
+
+### 参考核对：先校验格式再计算
+
+先限制格式和编码长度，再解析/解码并计算、比较；坏格式不应无上限分配或进入昂贵工作。
 
 ## 正常、错误和盐的实际检查
 
@@ -78,6 +94,7 @@ func TestPasswordCandidatesAndMalformed(t *testing.T) {
     if err != nil { t.Fatal(err) }
     if !verifyPassword(encoded, "Test-only-password-123") { t.Fatal("正确候选被拒绝") }
     if verifyPassword(encoded, "wrong-password") { t.Fatal("错误候选被接受") }
+    // 坏格式必须在昂贵的密码计算之前拒绝，不能panic或当作匹配成功。
     for _, invalid := range []string{"", "$bad$", strings.Repeat("x", 129)} {
         if verifyPassword(invalid, "Test-only-password-123") { t.Fatal("非法存储格式被接受") }
     }
@@ -85,3 +102,11 @@ func TestPasswordCandidatesAndMalformed(t *testing.T) {
 ```
 
 运行go test -run TestPasswordCandidatesAndMalformed -count=1。预期正确候选true、错误候选false、三种坏格式false。它测试密码函数，不等于登录会话、真实数据库或生产容量已通过。
+
+### 就地练习：并发限制还缺限速
+
+同时最多两次哈希，能否阻止攻击者持续排队提交？写出还需观测和限制的入口行为。
+
+### 参考核对：并发限制还缺限速
+
+不能；仍需请求限速、输入上限、排队/拒绝策略及容量测量。两项并发不是完整抗滥用保证。

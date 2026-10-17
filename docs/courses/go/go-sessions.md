@@ -14,6 +14,14 @@ POST登录并校验密码 → 服务器记录会话、响应Set-Cookie
 注销 → 服务器撤销会话 → 旧Cookie再用也应失败
 ```
 
+### 就地练习：Cookie还在是否有效
+
+画出注销后旧Cookie再请求/me的服务端检查路径，写出状态。
+
+### 参考核对：Cookie还在是否有效
+
+服务端查不到已撤销会话应401；仅清掉页面登录提示不会撤销凭据。
+
 ## 从已有项目启动，先观察浏览器
 
 打开 [安全会话工程](assets/downloads/web-followup-10.zip) followup-10，工具链满足go.mod，已准备依赖。PowerShell中设置自己的虚构管理员账户：
@@ -49,11 +57,27 @@ macOS/Linux用export，不要原样把占位密码当真实配置。默认服务
 
 本机开发用HTTP，生产配置要求HTTPS并设置Secure。服务器会话15分钟过期。不能只改浏览器时间或页面提示当过期验收；要验证服务器确实拒绝。
 
+### 就地练习：HttpOnly解决哪件事
+
+判断HttpOnly是否阻止脚本直接读取Cookie、是否自动验证对象归属、是否把HTTP变HTTPS。
+
+### 参考核对：HttpOnly解决哪件事
+
+只针对脚本直接读取Cookie；不替代授权，也不会自动启用HTTPS。
+
 ## CSRF 是什么，为什么多一个头
 
 浏览器自动带Cookie有好处，也可能被别的页面诱导发写请求，这类跨站请求伪造称CSRF。本项目在登录或/me返回本会话的csrfToken，合法页面写请求要在 `X-CSRF-Token` **请求头**里带回，服务器比较；同时检查不允许的Origin（请求来源）。
 
 这个头由客户端提交，不是Content-Type，也不是新密码。Token要绑定当前会话、难预测；不能把“带一个任意头”当保护。无Cookie或过期会话应401；身份有效但CSRF不符应403。401表示需要可用身份，403表示请求被拒绝。
+
+### 就地练习：状态按失败原因区分
+
+分别设计无Cookie、过期Cookie、有效会话但写请求缺CSRF的请求，写出401或403。
+
+### 参考核对：状态按失败原因区分
+
+前两种401；身份有效但CSRF拒绝为403，任意伪造头值不能代替当前会话令牌。
 
 ## 正常与失败验证
 
@@ -89,6 +113,7 @@ Cookie只是浏览器携带的凭证载体，服务端还要验证会话是否�
 
 ```go
 m.HandleFunc("GET /api/username", func(w http.ResponseWriter, r *http.Request) {
+    // 两个false表示此读取不要求管理员角色，也不走写操作CSRF检查；仍验证会话。
     user, ok := s.authorized(w, r, false, false)
     if !ok { return }
     writeJSON(w, 200, map[string]string{"username": user.Username})
@@ -113,3 +138,11 @@ func TestUsernameSessionLifecycle(t *testing.T) {
 ```
 
 go test -run TestUsernameSessionLifecycle应通过。只输出一个username字段，len(data)==1也排除了hash等额外字段。此入口是独立变式，原工程已有/api/me，不应把它说成原来没有身份读取。
+
+### 就地练习：两个服务实例
+
+登录由实例A创建内存会话，下次落到B会怎样？先列出共享会话策略所需的数据，而不是只复制Cookie。
+
+### 参考核对：两个服务实例
+
+B若无该记录会拒绝；需共享会话标识对应的身份、期限、撤销状态等，客户端Cookie不自动同步服务端map。

@@ -162,6 +162,7 @@ import "fmt"
 
 func Last(values []int) (int, bool) {
     if len(values) == 0 { return 0, false }
+    // 上面的空集合分支已返回，到这里len-1才一定是合法下标。
     return values[len(values)-1], true
 }
 

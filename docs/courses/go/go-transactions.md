@@ -8,6 +8,14 @@
 
 **事务的关键是一起提交或一起撤销，不能留下这次操作的部分写入。** BEGIN开始，COMMIT提交，ROLLBACK回滚。约束和事务不同：约束检查每行是否合法，事务决定这一组修改是否整体生效。
 
+### 就地练习：半份写入如何验收
+
+第一条合法、第二条被约束拒绝，写出回滚后的查询预期。不能只记录收到error。
+
+### 参考核对：半份写入如何验收
+
+第一条也不应存在；查询实际业务行才能证明整体撤销，序列编号可有空洞。
+
 ## 先用上一节的专用练习表观察
 
 在psql确认当前库为自己的练习库，继续使用practice_problems。先查询此次标记，避免与旧实验混淆；如已有同标题，请改一个新的标记。
@@ -64,6 +72,14 @@ func insertPair(ctx context.Context, db *sql.DB, first, second string) error {
 
 defer确保提前返回也能尝试Rollback。示例把提交错误交给调用者；网络断开等情况下提交结果可能需要业务核对，不能遇错就无条件重试重复写入。
 
+### 就地练习：误用了db入口
+
+在纸上把第一次Exec改成db.ExecContext、第二次仍走tx。第二次失败后Rollback能否撤销第一次？
+
+### 参考核对：误用了db入口
+
+不能保证：第一次脱离事务，通常已独立提交。相关语句必须统一走tx。
+
 ## 运行已有完整的失败测试
 
 在 [数据库API工程](assets/downloads/web-followup-09.zip) followup-09目录，按README创建名称以 `_test`结尾的独立测试库，设置TEST_DATABASE_URL，运行：
@@ -114,3 +130,11 @@ SELECT id, solved FROM lesson_tx ORDER BY id;
 ```
 
 第二项违反CHECK后，事务进入失败状态；明确ROLLBACK，再查询两行仍false。将第二行locked改false后重复BEGIN/两次UPDATE/COMMIT，两行才都true。迁入Go时第二个ExecContext失败就return，已登记的tx.Rollback撤销第一项；确认Commit错误也被处理。此例应在专用真实PostgreSQL中执行，不把源码阅读当实测。
+
+### 就地练习：提交失败可以盲重试吗
+
+提交时网络断开，调用者收到error。说明为什么先核对业务操作标记再重试，比直接再插两条可靠。
+
+### 参考核对：提交失败可以盲重试吗
+
+客户端可能不知道服务端是否已提交，直接重试可能重复；需按业务标记核对并设计幂等或明确重试合同。

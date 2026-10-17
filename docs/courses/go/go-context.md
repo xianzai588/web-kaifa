@@ -8,11 +8,27 @@
 
 **调用cancel只发出取消信号，工作函数必须检查信号或把ctx传给支持取消的操作。** 数据库的QueryContext以及HTTP请求上下文都使用这条机制；仅创建ctx却不传下去没有效果。
 
+### 就地练习：谁真正停止计算
+
+提前cancel后若sum完全不检查ctx，会发生什么？标出信号发出、观察、return三个动作。
+
+### 参考核对：谁真正停止计算
+
+仍可能完成求和；cancel发信号，sum观察并return才停止。ctx必须传到实际工作。
+
 ## select 怎样观察通道
 
 前面学会 `<-ch` 接收。select可以列出多个通道操作，执行当前可进行的一项。ctx.Done返回一个用于取消通知的通道；取消时它关闭，因此接收立刻可进行。default表示没有可进行分支时立刻走这里；没有default则等待。
 
 如果多个分支同时可进行，不保证总选你希望的某个分支。不能拿select当按源代码先后排序的if。
+
+### 就地练习：default会等吗
+
+当Done未关闭时，带default的select是否等待取消？若外层无限空转，可能造成什么？
+
+### 参考核对：default会等吗
+
+default立刻执行，不等待；无推进工作的空转循环可能忙等耗CPU。
 
 ## 完整程序：取消传入求和函数
 
@@ -79,6 +95,14 @@ defer cancel()
 
 调用支持ctx的数据库方法可以让操作观察取消；某个不支持取消的慢函数、CPU循环或阻塞调用，并不会因为外面有ctx就自动停止。检查间隔与依赖实现决定响应速度。
 
+### 就地练习：选择请求的父级
+
+在Handler派生查询超时时，应从r.Context还是Background派生？说明取消链的差别。
+
+### 参考核对：选择请求的父级
+
+用r.Context继承客户端放弃；Background会切断这条取消关系。派生后仍要调用cancel释放资源。
+
 ## 预测再改动
 
 删去main中显式提前cancel，保留defer，再运行应输出6。随后仅在自己的实验副本里删掉sum的取消检查、恢复提前cancel，预测仍会输出6：这正说明工作没观察信号。还原后通过。
@@ -117,9 +141,11 @@ import (
 )
 
 func find(ctx context.Context, values []string, target string) (string, error) {
+    // 入口也检查：空集合不会进入循环，但已取消操作仍应拒绝。
     if err := ctx.Err(); err != nil { return "", err }
     for _, value := range values {
-        if err := ctx.Err(); err != nil { return "", err }
+        // 入口也检查：空集合不会进入循环，但已取消操作仍应拒绝。
+    if err := ctx.Err(); err != nil { return "", err }
         if value == target { return value, nil }
     }
     return "", errors.New("未找到")
@@ -141,3 +167,11 @@ func main() {
 true
 Web true
 ```
+
+### 就地练习：空集合也检查取消吗
+
+对已取消ctx与空切片，比较只在循环内检查和函数入口先检查。给出两者的不同返回。
+
+### 参考核对：空集合也检查取消吗
+
+只在循环里检查可能直接返回成功；入口检查可按本节明确合同立刻返回取消错误。

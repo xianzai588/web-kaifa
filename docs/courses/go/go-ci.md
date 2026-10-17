@@ -8,6 +8,14 @@ CI是Continuous Integration，持续集成：代码提交或合并请求触发�
 
 **CI绿色只说明已配置并实际执行的检查通过，不说明没写的测试、被跳过的数据库或上线恢复也通过。** CI检查与CD部署是不同职责，本章配置不自动发布公网服务。
 
+### 就地练习：绿色属于哪个版本
+
+找到一个CI运行的提交SHA，与当前分支HEAD对照。不同SHA的绿灯能否作为本次通过？
+
+### 参考核对：绿色属于哪个版本
+
+不能；证据需对应交付提交与实际检查命令。旧分支或旧版本的结果不能替代本次。
+
 ## 先在独立工程本机跑懂三条命令
 
 打开 [交付工程](assets/downloads/web-followup-11.zip) followup-11，Go版本满足go.mod，依赖与自己的专用数据库按README准备。终端位于此独立模块：
@@ -39,6 +47,14 @@ jobs:
 YAML用缩进表示结构，空格层级影响对象归属，不用Tab。完整步骤依次取源码、准备Go/Node、启动PostgreSQL测试服务、运行Go检查、迁移、启动API、准备浏览器并执行端到端测试。
 
 checkout取本次代码；setup-go按go.mod声明准备工具链；go.sum与锁文件约束依赖。测试数据库服务名与连接地址要符合runner环境。工作流中出现的教学密码只用于短命隔离测试环境，不应当作生产秘密。
+
+### 就地练习：本地与远程分别证明
+
+本机go test通过后写出还缺哪条证据，才能声称GitHub Actions已执行同一测试。
+
+### 参考核对：本地与远程分别证明
+
+需远程相同SHA的Actions运行和具体步骤日志；存在YAML或推送成功都不等于流水线通过。
 
 ## 前后端结合的检查覆盖什么
 
@@ -104,6 +120,7 @@ import "testing"
 func TestInvalidJSONDoesNotCreate(t *testing.T) {
     _, handler := fixture(t)
     cookie, csrf := loginFixture(t, handler, "club_admin")
+    // 不只检查400，还要比较前后数据，防止先写入再报错。
     before := secureRequest(handler, "GET", "/api/events", "", cookie, "")
     response := secureRequest(handler, "POST", "/api/events", `{"title":"broken",}`, cookie, csrf)
     if response.Code != 400 { t.Fatalf("status=%d body=%s", response.Code, response.Body) }
@@ -115,3 +132,11 @@ func TestInvalidJSONDoesNotCreate(t *testing.T) {
 ```
 
 运行go test -run TestInvalidJSONDoesNotCreate -count=1，再确认CI实际执行的go test ./...包含该文件。删除decodeJSON的首次解码错误检查可能仍被后续检查拒绝，不保证这一种变异一定让该测试失败；应制造“非法输入实际被接受”的确定故障，再确认测试失败。不要把只改了某行源码却没改变行为当作测试无效。
+
+### 就地练习：区分跳过与通过
+
+测试因未设置TEST_DATABASE_URL而SKIP，CI整体绿。报告应怎样写数据库验收？
+
+### 参考核对：区分跳过与通过
+
+单元/静态可通过，真实数据库为未执行；不能把SKIP提升为持久化验证。

@@ -8,6 +8,14 @@
 
 **类型断言检查“接口里已经是什么类型”，不把一个值转换成另一种类型。**`value.(string)`只在value里是string时成功；文字 `"7"` 不会变成整数7。文字转数字仍用strconv.Atoi。
 
+### 就地练习：断言不会解析数字
+
+把any分别装入int(7)和string("7")，做两结果int断言，写出值与ok。
+
+### 参考核对：断言不会解析数字
+
+前者7 true，后者0 false；解析字符串应使用strconv而非断言。
+
 ## 完整程序
 
 在独立Go练习目录替换main.go：
@@ -85,6 +93,7 @@ import (
 )
 
 func asTitle(value any) (string, bool) {
+    // 双结果形式只检查动态类型；不匹配走false，不触发断言panic。
     text, ok := value.(string)
     if !ok { return "", false }
     text = strings.TrimSpace(text)
@@ -108,3 +117,11 @@ func main() {
 "" false
 "" false
 ```
+
+### 就地练习：接口里有nil指针
+
+令var p *int，再var value any=p。比较value==nil与断言*p类型是否成功；不做解引用。
+
+### 参考核对：接口里有nil指针
+
+接口不为nil；断言为*int可成功，但得到的指针仍nil，不能据接口非nil就解引用。

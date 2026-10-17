@@ -17,6 +17,14 @@ Go的变量、切片和map存在程序内存中。关掉程序，除非自己写
 
 这个表的一行近似前面的一个结构体；多行近似一组结构体。但数据库规则、查询和持久化由数据库执行，不是Go切片自动变成表。
 
+### 就地练习：客户端版本不等于连通
+
+写出psql --version与SELECT current_database()各能证明什么，说明哪一步确认目标练习库。
+
+### 参考核对：客户端版本不等于连通
+
+前者只验证客户端可运行；连接后查询才确认实际库与用户。浏览器表格也不等于数据库表。
+
 ## 在专用练习库连接，不在 Go 文件里执行
 
 首次安装与账户创建按 [数据库环境讲义](#/topic/go-sql) 或 [第09阶段安装步骤](#/followup/web/9) 做：准备PostgreSQL服务、psql客户端、自己的非超级用户和新练习库，例如club_practice。确认 `psql --version` 可用；它只检查客户端版本，不证明服务已启动。
@@ -61,6 +69,14 @@ CREATE TABLE practice_problems (
 | DEFAULT FALSE | 省略该字段时使用false，不覆盖明确提供的值 |
 
 `trim` 默认去掉首尾的普通空格，`length`求字符长度，`> 0`要求去掉这些空格后仍有字符。这里拒绝空文字和只有普通空格的标题，**不等于拒绝所有 Unicode 空白、制表符或换行**。想限制更多字符，要先定义规则再补约束；Go 的 `strings.TrimSpace` 与此默认 SQL 规则也不完全相同。SQL注释用 `--`。创建成功会显示CREATE TABLE，但查询仍为0行。重复执行会报表已存在，不要为了重跑就删库；保留这张表继续实验。
+
+### 就地练习：省略、空文字与NULL
+
+对title空字符串、NULL和只填正常title分别预测CHECK、NOT NULL、DEFAULT的作用。
+
+### 参考核对：省略、空文字与NULL
+
+空文字被标题CHECK拒绝，NULL被NOT NULL拒绝；正常title且省略solved时为false。默认值不替代输入校验。
 
 ## 插入一行，再核对
 
@@ -114,3 +130,11 @@ INSERT INTO lesson_difficulty (title, difficulty) VALUES ('错误样例', '');
 ```
 
 第一条省略difficulty，返回basic；第二条被CHECK拒绝。再试显式NULL应被NOT NULL拒绝。三种输入分别核对，不能把省略、空文字和NULL当一种情况。此处SQL需要真实PostgreSQL，本轮不把未运行的数据库实验记为通过。
+
+### 就地练习：新增约束之前
+
+已有表包含重复标题，现在想给title加UNIQUE。先写需要检查的数据与失败处理，而不是立即执行迁移。
+
+### 参考核对：新增约束之前
+
+先查重并决定清理/保留规则，备份并验证迁移；UNIQUE不能自动替你选择删哪条历史记录。

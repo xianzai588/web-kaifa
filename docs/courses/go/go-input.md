@@ -38,6 +38,7 @@ func main() {
 	var count int
 	var price float64
 	fmt.Println("输入数量和单价，例如 3 2.5：")
+	// &提供可写目标；n只数成功解析的项，不能拿部分输入继续结算。
 	n, err := fmt.Scan(&count, &price)
 	if err != nil {
 	    fmt.Printf("读取失败，成功读入 %d 项\n", n)
@@ -173,6 +174,7 @@ func main() {
         fmt.Println("输入为空")
         return
     }
+    // 先验证文字能否转成整数，再在后面判断分钟数是否在业务范围内。
     minutes, err := strconv.Atoi(text)
     if err != nil {
         fmt.Println("请输入整数分钟")

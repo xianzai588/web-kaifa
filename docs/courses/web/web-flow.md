@@ -17,11 +17,27 @@ span 是通用行内容器，div 是通用块容器；给 span 设置 display:bl
 
 只改 display，一次测试一个值：inline-block 时并排，block 时两行，inline 时普通文字宽度跟内容走。浏览器默认 body 有少量外边距，这与 item 的 padding 是不同地方。
 
+### 就地练习：width在谁身上生效
+
+给普通span设width100px，先用inline再用inline-block，对比盒尺寸，最后改block看换行。
+
+### 参考核对：width在谁身上生效
+
+普通非替换行内元素不按块宽生效；inline-block可设尺寸且整体同行，block另起块行。
+
 ## 隐藏、占位与流中的间距
 
 display:none 会让元素不参与布局，通常也不出现在辅助技术阅读树中；visibility:hidden 隐藏但仍留布局空间；opacity:0 只是透明，元素还可能占位并接收交互，不能把它当禁用操作。
 
 普通 inline 的 width/height 不按块盒规则工作；inline-block 作为行内整体排列，同时可设置尺寸。块元素的 width:auto 与 width:100% 也不总等价：在 content-box 下再加 padding，100% 可能超出容器。
+
+### 就地练习：透明不是禁用
+
+只在临时按钮上分别试display:none、visibility:hidden、opacity:0，比较占位与Tab行为，之后恢复可见状态。
+
+### 参考核对：透明不是禁用
+
+none不占位，hidden留布局位；opacity0仍可能聚焦和交互，不能当作禁用或安全隐藏。
 
 ## 先看一个完整例子
 
