@@ -10,15 +10,39 @@
 
 这段是**独立观察片段**，放进 main 后运行：`items := make([]int, 2, 5)`，接着 `fmt.Println(len(items), cap(items), items)`，预期 `2 5 [0 0]`。make 的第二参数创建两个当前元素，第三参数预留容量五；不能因为 cap=5 就访问 items[4]，可访问索引必须小于 len=2。执行 `items = append(items, 7)` 后再打印，预期 `3 5 [0 0 7]`。容量是追加能力，不是已经存在的长度。
 
+### 就地练习：容量不是下标范围
+
+make([]int,2,5)后写出合法索引；只预留容量长度0的目标copy能复制几项？
+
+### 参考核对：容量不是下标范围
+
+索引0、1；目标长度0时copy为0，容量不创建可索引元素。
+
 ## map：按键读取，以及“没有”与“为零”
 
 `make(map[string]int)` 创建可写的 map，键是字符串，值是整数。`counts[word]++` 读到缺失键的零值，再加一并保存，所以适合计数。读取 `value, ok := counts["rust"]` 的第二个结果说明键是否存在；单看 `value==0` 无法区分缺失与明确存了零。nil map 可以读取和取长度，但向它赋值会 panic；先 `make` 或使用字面量初始化。
 
 map 遍历顺序未规定。稳定排行榜应收集键，再排序；不能通过多运行几次看到同样结果就依赖它。相同次数时加字典序作为第二规则，使验收可重现。`delete` 删除键；删除不存在键不会出错。map 也不会自动给多个 goroutine 同步，进入并发课时必须处理共享访问。
 
+### 就地练习：读取不增加键
+
+空map读取rust得到什么，长度是否增加？显式写rust=0后再读。
+
+### 参考核对：读取不增加键
+
+先0,false且长度0；写后0,true且长度1，nil map还不能直接写入。
+
 ## 字节、rune 和人眼看到的字符
 
 UTF-8 字符串存字节。`len("Go你好")` 是 8：两个 ASCII 字节，加两个汉字各三个字节。`[]rune` 或 `utf8.RuneCountInString` 对有效字符串数 Unicode 码点，这里是 4。`range` 字符串返回的索引是**字节偏移**，值是 rune。它不是数组里第几个汉字。某些表情、组合音标由多个码点组成，所以 rune 数仍不是所有场景的人眼字符数；这份练习不实现字形簇分割。
+
+### 就地练习：起点是字节偏移
+
+为Go你好先预测字节数、码点数与range偏移，再运行。
+
+### 参考核对：起点是字节偏移
+
+8字节、4码点，偏移0、1、2、5；不是第几个汉字的编号。
 
 ## 在 VS Code 运行：main.go 完整程序
 
@@ -36,6 +60,7 @@ import (
 
 func main() {
 	a := []int{1, 2, 3}
+	// 取片只改变可见范围，b仍与a共享前两个整数。
 	b := a[:2]
 	b[0] = 9
 	c := make([]int, len(a))
@@ -47,10 +72,12 @@ func main() {
 	for _, word := range strings.Fields("Go go WEB") {
 		counts[strings.ToLower(word)]++
 	}
+	// 从长度0开始追加键；容量仅预留，不能把预留项当真实词名。
 	keys := make([]string, 0, len(counts))
 	for word := range counts {
 		keys = append(keys, word)
 	}
+	// 先按次数降序，次数相同再按词名；否则map来源的并列顺序不稳定。
 	sort.Slice(keys, func(i, j int) bool {
 		if counts[keys[i]] != counts[keys[j]] {
 			return counts[keys[i]] > counts[keys[j]]
@@ -118,10 +145,12 @@ func main() {
 	for _, word := range strings.Fields(text) {
 		counts[strings.ToLower(word)]++
 	}
+	// 从长度0开始追加键；容量仅预留，不能把预留项当真实词名。
 	keys := make([]string, 0, len(counts))
 	for word := range counts {
 		keys = append(keys, word)
 	}
+	// 先按次数降序，次数相同再按词名；否则map来源的并列顺序不稳定。
 	sort.Slice(keys, func(i, j int) bool {
 		if counts[keys[i]] != counts[keys[j]] {
 			return counts[keys[i]] > counts[keys[j]]

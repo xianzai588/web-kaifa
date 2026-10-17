@@ -7,17 +7,57 @@
 ### 1. 从里到外看四层
 content 是文字和图片占据的内容区域；padding 是内容到边框之间的内距；border 是包住内距的边框；margin 是边框以外与其他元素的外距。背景通常覆盖内容和内距，不覆盖 margin。给卡片“更多呼吸空间”用 padding；让卡片远离其他卡片用 margin 或父布局的 gap，它们表达的关系不同。
 
+#### 就地练习：内外间距分开
+
+为文字与边框留12px、两卡之间留16px，分别该用什么关系？
+
+#### 参考核对：内外间距分开
+
+前者padding，后者margin或父gap；背景不覆盖margin。
+
 ### 2. content-box 的 width 只定义内容宽
 本例 width=200px，左右 padding 各12px，左右 border 各1px。边框外宽是 `200+12+12+1+1=226px`。margin 不包含在这个测量里。如果左右 margin 各16px，横向占用空间还要考虑这32px；所以“看起来226宽”与“布局需要的总空间”不是同一概念。height 也有相应区别，但文字换行又会影响内容高度。
+
+#### 就地练习：先手算外宽
+
+width200、两侧padding12、border1，写出content-box边框外宽与加两侧16margin后的横向预算。
+
+#### 参考核对：先手算外宽
+
+外宽226px，另加32px外距后预算258px，不把margin放进边框测量。
 
 ### 3. border-box 把内距与边框纳入 width
 同样声明 width=200px，border-box 的边框外宽保持200px；内容宽变成 `200-24-2=174px`。它没有让 padding 消失，而是在总宽不变时留给内容的空间更少。CSS 常在全局设置 `* { box-sizing: border-box; }` 让宽度预算更直观，仍要记得 margin 在外面。min-width、max-width、内容不可收缩等也可能影响最终宽度，所以读声明之后还要测量。
 
+#### 就地练习：同宽内容变少
+
+改border-box且width仍200，预测内容宽，再增加padding观察。
+
+#### 参考核对：同宽内容变少
+
+原内容174px；增加padding时总外宽仍受200约束而内容更窄。
+
 ### 4. 测量什么、用什么单位
 CSS 的 px 是 CSS 像素，不等于你数显示器物理像素；缩放和设备像素比会改变对应关系。示例调用 getBoundingClientRect().width 读取元素边框盒的显示宽度；在本例没有 transform、特殊缩放时，可以直接核对上面的公式。DevTools 的盒模型图还能分别展示内容、padding、border 与 margin。两种证据一起看，才不会把外距误算进返回值。
 
+#### 就地练习：测量对象明确
+
+比较盒模型图与getBoundingClientRect的宽度，说明是否包含margin；本例不加transform。
+
+#### 参考核对：测量对象明确
+
+矩形读边框外缘，不含margin；无transform时可直接核对本课公式。
+
 ### 5. block与inline不是所有元素一样算
 普通文档流中的div、p等块级盒通常从新行开始，宽度auto时占可用宽度；span、a等行内盒参与文字行，给普通inline设width或height通常不会像块盒那样控制尺寸。希望链接像有明确宽高的标签，可考虑inline-block；想管理一组标签则由Flex/Grid容器排列。默认display来自浏览器样式，可以被CSS改变。不要以为“链接标签一定不能设宽”或“所有标签width都一样生效”，要看最终display与布局环境。
+
+#### 就地练习：inline不按块宽
+
+普通span设width100px，分别用inline和inline-block观察。
+
+#### 参考核对：inline不按块宽
+
+普通行内不按块宽方式应用width，inline-block可有尺寸并参与行内排列。
 
 ## 在 VS Code 中创建、保存与运行
 

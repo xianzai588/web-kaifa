@@ -46,12 +46,12 @@
       heading.id=`${scope}-${item.id}-${i}`;heading.tabIndex=-1;
       return `<button type="button" data-knowledge-jump="${heading.id}">${escape(heading.textContent)}</button>`;
     }).join('');
-    [...fragment.content.querySelectorAll('h2,h3')].filter(h=>/^(参考答案|参考解答|练习答案)/.test(h.textContent.trim())).forEach(heading=>{
+    [...fragment.content.querySelectorAll('h2,h3,h4')].filter(h=>/^(参考答案|参考解答|练习答案|参考核对)/.test(h.textContent.trim())).forEach(heading=>{
       const details=document.createElement('details');details.className='knowledge-answer';if(heading.id){details.id=heading.id;details.tabIndex=-1;}
       const summary=document.createElement('summary');summary.textContent=heading.textContent;
       const body=document.createElement('div');body.className='details-body';
       let next=heading.nextElementSibling;
-      while(next&&!(/^H[1-3]$/.test(next.tagName)&&Number(next.tagName[1])<=Number(heading.tagName[1]))&&!(next.tagName==='P'&&/^(自查|官方参考|参考资料|继续学习)/.test(next.textContent.trim()))){const following=next.nextElementSibling;body.append(next);next=following;}
+      while(next&&!(/^H[1-4]$/.test(next.tagName)&&Number(next.tagName[1])<=Number(heading.tagName[1]))&&!(next.tagName==='P'&&/^(自查|官方参考|参考资料|继续学习)/.test(next.textContent.trim()))){const following=next.nextElementSibling;body.append(next);next=following;}
       heading.replaceWith(details);details.append(summary,body);
     });
     fragment.content.querySelectorAll('pre').forEach((pre,i)=>{

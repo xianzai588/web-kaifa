@@ -1,7 +1,7 @@
 /* Exercises published explanations, course visibility, and their complete examples. */
 const {chromium}=require('playwright');
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
-const {execFileSync}=require('node:child_process'),{pathToFileURL}=require('node:url');
+const {execFileSync,spawnSync}=require('node:child_process'),{pathToFileURL}=require('node:url');
 const root=path.resolve(__dirname,'..'),qa=path.join(root,'.qa');
 const BASE=process.env.SITE_TEST_URL||'http://127.0.0.1:8743/';
 const normalize=s=>String(s).replace(/\r\n/g,'\n').trim();
@@ -71,7 +71,7 @@ const normalize=s=>String(s).replace(/\r\n/g,'\n').trim();
     const codeId=await copy.getAttribute('data-book-copy');
     assert.equal(normalize(await page.evaluate(()=>navigator.clipboard.readText())),normalize(await page.locator('#'+codeId).textContent()));
     assert.equal(await page.locator('#code-preview').count(),0,'copying does not add a Go preview');
-    const offline=await context.newPage();await offline.goto(pathToFileURL(path.join(root,'index.html')).href+'#/topic/go-control');await offline.locator('.knowledge-prose').waitFor();assert((await offline.locator('.knowledge-prose').textContent()).includes('零值'));
+    if(process.env.SITE_HTTP_ONLY!=='1'){const offline=await context.newPage();await offline.goto(pathToFileURL(path.join(root,'index.html')).href+'#/topic/go-control');await offline.locator('.knowledge-prose').waitFor();assert((await offline.locator('.knowledge-prose').textContent()).includes('零值'));}else console.log('SKIP: file:// knowledge rendering (SITE_HTTP_ONLY=1); HTTP content and examples still run.');
     const example=await context.newPage(),exampleErrors=[];example.on('pageerror',e=>exampleErrors.push(e.message));
     for(const spec of specs){
       if(spec.kind==='manual'){report.push({id:spec.id,status:'manual',reason:spec.reason});continue;}
@@ -81,6 +81,14 @@ const normalize=s=>String(s).replace(/\r\n/g,'\n').trim();
         const stdout=execFileSync('go',spec.command||['run','.'],{cwd,encoding:'utf8',timeout:30000});
         if(spec.expected!==undefined)assert.equal(normalize(stdout),normalize(spec.expected),spec.id+' stdout');
         for(const value of spec.contains||[])assert(stdout.includes(value),spec.id+' expected output '+value);
+        if(['go-design','go-delivery'].includes(spec.id)){
+          const name=spec.id==='go-design'?'PAGE_LIMIT':'PORT';
+          for(const raw of ['', 'abc']){
+            const invalid=spawnSync('go',['run','.'],{cwd,encoding:'utf8',timeout:30000,env:{...process.env,[name]:raw}});
+            assert.match(invalid.stdout+invalid.stderr,spec.id==='go-design'?/配置错误/ : /PORT 需为/ ,spec.id+' explicit invalid configuration is rejected');
+            if(spec.id==='go-delivery')assert.notEqual(invalid.status,0,'server invalid config fails before startup');
+          }
+        }
         report.push({id:spec.id,status:'passed',command:spec.command||['run','.'],stdout:normalize(stdout)});continue;
       }
       assert.equal(spec.kind,'html');await example.setViewportSize({width:1280,height:960});
@@ -133,6 +141,6 @@ const normalize=s=>String(s).replace(/\r\n/g,'\n').trim();
     }
     assert.deepEqual(errors,[]);assert.deepEqual(exampleErrors,[]);
     fs.writeFileSync(path.join(qa,'knowledge-example-results.json'),JSON.stringify(report,null,2));
-    console.log('PASS: 24 detailed topics × 7 widths, all 42 course mappings, focus/copy/offline/progress, published runnable examples and failure boundaries.');
+    console.log(`PASS: 24 detailed topics × 7 widths, all 42 course mappings, focus/copy/progress, runnable examples and failure boundaries; file:// ${process.env.SITE_HTTP_ONLY==='1'?'explicitly skipped':'checked'}.`);
   }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(e=>{console.error(e);process.exitCode=1;});

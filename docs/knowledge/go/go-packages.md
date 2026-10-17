@@ -18,6 +18,14 @@
 
 **已有模块时怎么做？** 先打开已有 `go.mod`，原模块路径若是 `example.com/setup-check`，同一模块的导入就应是 `example.com/setup-check/calc`。不要照抄别人例子的 `example/go-lab/calc`，也不要反复 `go mod init` 来消除“找不到包”。这里没有远程依赖，`go get` 不能修复你自己的 import 拼错。
 
+### 就地练习：路径三部分对应
+
+模块为example.com/mine，子目录calc，写出import与调用名；文件名math.go是否进import？
+
+### 参考核对：路径三部分对应
+
+导入example.com/mine/calc，调用calc.Add；文件名不拼进包路径，不能靠go get修复自己的拼写错误。
+
 ## 2. 在 VS Code 建立明确的三个文件
 
 以下从**新的独立目录**开始。在 `exercises/go` 新建 `go-packages`，选择“文件 → 打开文件夹”，打开它。终端用 `pwd` 确认最后一级是 `go-packages`，然后首次执行：
@@ -112,6 +120,14 @@ go vet ./...
 `go run .` 应在终端输出一行 `7`。`go test` 应列出 `positive`、`mixed`、`zero`、`cancel` 四个子测试，均为 PASS，命令成功退出。根 main 包出现 `[no test files]` 正常，因为测试放在 calc 包；看 calc 的实际结果，不能把这行当成“没有测试运行”。`-count=1` 避免重复检查被测试缓存掩盖，耗时与机器路径不用和示例完全一致。
 
 `./...` 表示当前目录与下面适用的包，所以根目录执行会包含 calc。只执行 `go test .` 时，此例只测试 main 包，不会包含子目录中的四个测试。`go vet` 成功时通常没有输出，不表示业务规则已全部验证。
+
+### 就地练习：只测根包会漏谁
+
+对比go test .与go test ./...，解释本例根包no test files为何不代表calc未执行。
+
+### 参考核对：只测根包会漏谁
+
+点只选根main；省略号还选子包。应看calc四个子测试的实际结果，go run不运行它们。
 
 ## 4. 故意改错一次，确认测试能发现问题
 

@@ -8,6 +8,14 @@ HTTP 层把请求文字转换成参数，把错误映射为状态码；业务层
 
 小接口由使用方定义，例如 `List(ctx, limit, offset)` 是业务需要的读取能力。通过构造函数传入实现，比在各文件中访问全局 db 更易控制。fake 能检查业务交互，但仍不能证明 SQL 正确。简单函数还没有复杂依赖时，普通参数足够，不必为每个值引入接口与框架。
 
+### 就地练习：一项职责一处
+
+将SQL参数绑定、HTTP状态、创建标题规则分别放到存储、Handler、Service。
+
+### 参考核对：一项职责一处
+
+存储负责SQL，Handler映射协议，Service处理业务；测试替身仍调用真实业务。
+
 ## 2. 配置在启动时验证，秘密不要进入日志
 
 端口、数据库地址等由配置提供。启动时发现必需值为空就明确停止，避免服务启动后某个请求才崩溃。示例只读取 `PAGE_LIMIT` 并设默认 2，不要求真实凭据。数据库密码、令牌与完整连接串不应该提交或打印；日志可记录请求 id、操作、状态与已脱敏原因。日志是排错证据，不是把所有请求 body 无限制复制到文件。
@@ -33,11 +41,27 @@ func (s *Service) Create(ctx context.Context, p Problem) error {
 
 日志也应有可比较的字段。Go 1.21+ 可用标准库 slog，下面是**日志片段**，需导入 `log/slog`：`slog.Info("创建记录", "request_id", "req-1", "user_id", 10, "status", 201)`。输出带操作与字段，便于按请求定位；具体时间和文本格式取决于 Handler，不作为精确stdout契约。不添加password、token或完整DATABASE_URL字段。
 
+### 就地练习：缺省和错误
+
+PAGE_LIMIT未提供、明确abc、明确空值分别应如何处理，写出自己的合同。
+
+### 参考核对：缺省和错误
+
+未提供可默认；明确非法应拒绝。本轮改用LookupEnv区分空值和缺失，不悄悄掩盖配置错误。
+
 ## 3. 分页必须限定范围并固定顺序
 
 limit 表示每页数量，offset 表示跳过数量。先限制 limit，例如 1–100；拒绝负 offset。页码若从 1 开始，offset 通常为 `(page-1)*limit`，计算也要防止极端整数溢出。不存在的后续页通常返回空列表，不等同于“缺少单条资源”的404。
 
 排序要包含唯一的打破并列字段。按创建时间降序时，再按 id 降序；否则同一时间的记录在两次查询中可能交换。PostgreSQL 实际查询片段是 `ORDER BY created_at DESC, id DESC LIMIT $1 OFFSET $2`，列名应来自固定规则。稳定排序无法避免 offset 分页在新增/删除下跳动；需要更稳定翻页时可采用基于最后一条 `(created_at,id)` 的游标，并定义一致性语义。
+
+### 就地练习：并列也固定顺序
+
+同Created有id2、3，降序按Created再id时谁先？offset越过末尾是否404？
+
+### 参考核对：并列也固定顺序
+
+id3先；合法空页可空列表，非法参数另拒绝。动态插删仍可能使偏移页跳动。
 
 ## 在 VS Code 运行：main.go 完整程序
 
@@ -57,6 +81,7 @@ type Problem struct { ID int; Created int; Title string }
 
 func page(items []Problem, limit, offset int) ([]Problem, error) {
 	if limit < 1 || limit > 100 || offset < 0 { return nil, fmt.Errorf("分页参数非法") }
+	// 先复制元素再排序，避免分页调用改变调用者的原始顺序。
 	copyItems := append([]Problem(nil), items...)
 	sort.Slice(copyItems, func(i, j int) bool {
 		if copyItems[i].Created != copyItems[j].Created { return copyItems[i].Created > copyItems[j].Created }
@@ -70,7 +95,8 @@ func page(items []Problem, limit, offset int) ([]Problem, error) {
 
 func main() {
 	limit := 2
-	if raw := os.Getenv("PAGE_LIMIT"); raw != "" {
+	// 只在未提供时默认；明确的空字符串也应进入解析并拒绝。
+	if raw, provided := os.LookupEnv("PAGE_LIMIT"); provided {
 		n, err := strconv.Atoi(raw)
 		if err != nil || n < 1 || n > 100 { fmt.Println("配置错误：PAGE_LIMIT 需为 1–100"); return }
 		limit = n

@@ -8,6 +8,14 @@
 
 Add/Done 的数量要平衡。少 Done 可能一直等，多 Done 会 panic。不要在 main 已经开始 Wait 且计数为零时才从新 goroutine 调 Add。任务之间没有共享数据时无需强行加锁；需要访问同一可变对象时，再选择 Mutex、channel 或更合适设计。
 
+### 就地练习：完成数量平衡
+
+启动三任务前登记3，每项defer Done，说明少Done与main不Wait各有什么后果。
+
+### 参考核对：完成数量平衡
+
+少Done可能等不到零；不Wait时main可先退出，Sleep不提供完成证明。
+
 ## 2. 数据竞争、Mutex 与 channel
 
 `total++` 不是“一个数学动作就天然原子”；它涉及读旧值、加一、写回，两任务可能互相覆盖。同一变量存在并发读写且没有正确同步，会产生数据竞争。Mutex 的 Lock/Unlock 把临界区包起来；所有访问都遵守同一把锁，不能只给写加锁、读不保护。加锁范围应短，避免拿着锁等网络或慢数据库。
@@ -30,11 +38,27 @@ fmt.Println(value, ok)
 
 多个发送者时，需要协调所有发送者完成后再关闭，例如用WaitGroup等待，再由唯一负责方close。读取方提前退出时，发送方可能永久等待；发送select应同时观察ctx.Done。这说明“有channel”并不等于自动管理好了生命周期。
 
+### 就地练习：等待不保护读改写
+
+两任务total++后Wait，解释为何仍需同一把锁；关闭通道后读到0又如何判结束？
+
+### 参考核对：等待不保护读改写
+
+Wait只等完成，Mutex保护共享访问；通道用ok区分合法零和关闭读完，不能只看value。
+
 ## 3. context 是协作取消，不是强制杀线程
 
 context 携带取消信号、deadline 等。`WithCancel` 返回派生 ctx 和 cancel，调用 cancel 后 `ctx.Done()` 关闭，`ctx.Err()` 是 Canceled。`WithTimeout` 到期可能得到 DeadlineExceeded。得到 cancel 函数后通常 defer cancel，及时释放相关资源。
 
 被取消的函数需要自己检查或 select 等待信号；一个只做无限 CPU 循环、从不检查 ctx 的 goroutine 不会因为 context 被取消就自动消失。网络/数据库调用要将 ctx 继续向下传，不能在每层改用 Background 丢失请求取消。多个 select 分支同时就绪时选择不应被依赖，测试应使用明确的同步时序。
+
+### 就地练习：取消必须传下去
+
+调用cancel后一个循环从不检查ctx，会被强制停止吗？写出工作需要增加的路径。
+
+### 参考核对：取消必须传下去
+
+不会；实际工作观察Done或Err并return，I/O用支持ctx的方法，再等待任务退出。
 
 ## VS Code 可运行例子：main.go 完整程序
 
@@ -51,6 +75,7 @@ import (
 )
 
 func Wait(ctx context.Context, delay time.Duration) error {
+	// 先拒绝已取消操作；不让就绪的零时长timer和取消随机竞争。
 	if err := ctx.Err(); err != nil { return err }
 	timer := time.NewTimer(delay)
 	defer timer.Stop()
@@ -69,6 +94,7 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for i := 0; i < 200; i++ {
+				// 同一把锁覆盖读、加一、写回，WaitGroup只负责最后等待完成。
 				mu.Lock()
 				total++
 				mu.Unlock()

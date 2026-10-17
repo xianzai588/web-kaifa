@@ -7,17 +7,57 @@
 ### 1. DOM是页面的对象树
 浏览器解析HTML后建立DOM，每个元素是可被脚本找到和修改的节点。document表示当前文档；querySelector('#keyword')寻找第一个匹配id的元素，找不到会返回null。源HTML只是起点，脚本可以添加或删除节点，所以Elements里看到的是当前树。脚本放body末尾时，前面的input与ul已经被解析，避免过早查询找不到元素；另一选择是外部脚本defer。
 
+#### 就地练习：当前树不是磁盘
+
+改textContent后对比Elements与源文件，刷新为什么还会再次变新？
+
+#### 参考核对：当前树不是磁盘
+
+源码未改，刷新重新执行脚本才更新DOM。
+
 ### 2. 事件是发生了什么，不是直接给你正确业务结果
 input事件表示用户输入值发生变化，click表示点击，submit表示表单提交。addEventListener把一个函数登记给事件，之后事件发生浏览器才调用它；不要写render()当监听参数，那会立即执行并传入返回值。一个初始化入口绑定一次事件，重复更新列表只调用render，避免每次渲染又绑定一次导致一次输入执行多遍。
+
+#### 就地练习：重复绑定会怎样
+
+给同一input用两个不同匿名函数各登记一次input处理，输入一个字，观察render次数；再恢复只绑定一次。
+
+#### 参考核对：重复绑定会怎样
+
+不同函数引用不会按同一函数去重，单次input会调用两次render；直接重复登记相同render引用则会被去重。render只更新显示，不应每次追加监听器。
 
 ### 3. 状态、推导结果与渲染要一致
 本例状态是input.value；先trim去两端空白，再toLowerCase统一大小写。filter用includes判断标题是否含关键词，空字符串会匹配全部标题。matches是同一次计算的结果，列表与count都从它推导，避免两套筛选逻辑漂移。没有匹配是合法状态，应提示换关键词；不是页面加载失败，更不能伪造网络错误。
 
+#### 就地练习：数量和列表同源
+
+查命中、不命中与空词，逐次比较数量与li数。
+
+#### 参考核对：数量和列表同源
+
+两处由同一matches计算；空查询按合同显示全集，不命中是合法空结果。
+
 ### 4. 安全创建与替换节点
 render先replaceChildren清空旧列表，再逐项createElement('li')，用textContent填标题，append进ul。textContent把文字当文字；innerHTML会解析标签。即使当前数据写死，将来从输入或接口读取时也需要保持这个边界。输入`<b>`是一个关键词，不应因它带尖括号就变成真实标签。示例筛不到它只说明没有同名标题，不说明任何代码执行。
 
+#### 就地练习：节点每轮新建
+
+把带尖括号的标题放进textContent，再在Elements查是否创建了同名标签。
+
+#### 参考核对：节点每轮新建
+
+按字面显示，不解析标签；每条独立li应在循环内创建，append才加入文档。
+
 ### 5. 可见反馈与辅助技术
 count有role=status，让变化的数量有机会被播报。反馈仍是普通可见文字，鼠标用户也看得到。即时搜索不应每次输入都把焦点移到结果；否则用户无法连续打字。一个render同时照顾列表、数量与空状态，控件就能保持一致；页面重新加载则回到本例初始值，因为这里没有保存功能。
+
+#### 就地练习：输入时不抢焦点
+
+持续输入查询词，观察每次更新后焦点是否仍在输入框。
+
+#### 参考核对：输入时不抢焦点
+
+数量可播报且可见，焦点应留给继续输入，不要每字都移到结果。
 
 ## 在 VS Code 中创建、保存与运行
 
@@ -76,6 +116,7 @@ count有role=status，让变化的数量有机会被播报。反馈仍是普通�
     function render(){
       const keyword=input.value.trim().toLowerCase();
       const matches=items.filter(title=>title.toLowerCase().includes(keyword));
+      // 每次重建当前结果，避免连续输入把旧行重复追加。
       list.replaceChildren();
       for(const title of matches){
         const li=document.createElement('li');

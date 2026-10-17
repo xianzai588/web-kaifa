@@ -38,7 +38,7 @@ async function assertSourceDOM(page,route){
   const current=document.querySelector(row.prose);
   const signature=scope=>[...scope.querySelectorAll('h1,h2,h3,p,li,pre,th,td,a[href],img[src]')]
    .filter(el=>!el.closest('.reader-table-hint,.reader-code-hint,[data-reader-table-hint]'))
-   .map(el=>{const authored=el.cloneNode(true);authored.querySelectorAll('.reader-table-hint,.reader-code-hint,[data-reader-table-hint]').forEach(hint=>hint.remove());return {tag:el.tagName,text:authored.textContent,href:el.getAttribute('href'),src:el.getAttribute('src'),alt:el.getAttribute('alt')};});
+   .map(el=>{const authored=el.cloneNode(true);authored.querySelectorAll('.reader-table-hint,.reader-code-hint,[data-reader-table-hint],[data-code-copy]').forEach(hint=>hint.remove());return {tag:el.tagName,text:authored.textContent,href:el.getAttribute('href'),src:el.getAttribute('src'),alt:el.getAttribute('alt')};});
   return {original:signature(original),current:signature(current)};
  },route);
  assert.deepEqual(result.current,result.original,route.name+' retains exact authored text, code, table cells, links and images');

@@ -4,9 +4,11 @@
 
 **在线阅读：[打开开发练习册](https://zhouwu97.github.io/web-kaifa/)。**
 
-教学补全的实际范围、分批检查与恢复点见 [2026-10-16 修订记录](docs/teaching-revision-20261016.md)。本 fork 的源码更新不表示上游在线站点已发布。
+最新逐章审查、练习覆盖和实际验证见 [2026-10-17 审查记录](docs/teaching-review-20261017.md)；上一轮基础补全见 [2026-10-16 修订记录](docs/teaching-revision-20261016.md)。本 fork 的源码更新不表示上游在线站点已发布。
 
 本次补写覆盖125章：Go输入输出已移到入门，基础语法、Web语言与工程章节补充具体规则及题解；重复尾注已删减。新增答案可分别用 `python3 scripts/check_course_answers.py` 与 `node scripts/check_course_browser_answers.cjs` 复验，环境要求与未验证项见修订记录。
+
+125章现在有347个就地练习，题目直接放在对应讲解下方，参考核对默认折叠；24个知识专题另有106个，包拆分补充讲义另有2个。难点代码补充数据流、执行顺序和失败边界注释；代码、命令、配置和预期输出均可逐块复制，输出按钮明确标为“复制输出”。
 
 **本机阅读**：下载或克隆仓库，双击 [index.html](index.html)。课程、提示模板和进度功能不需要安装依赖；官方资料入口需要联网。
 
@@ -104,7 +106,7 @@ git push
 
 系统教程源文件在 `docs/courses/go`、`docs/courses/web`，`catalog.json`记录顺序、前置、目标、旧课映射与可运行示例。编写和独立审核按 [教学标准](docs/teaching-standard.md) 逐章进行，正文与示例应保持一致。修改后运行 `node scripts/build_course_book.cjs` 和 `node scripts/version_site_assets.cjs`；四个新增小项目的ZIP用 `python scripts/build_course_projects.py` 同步。`node scripts/test_course_book.cjs`逐个运行独立例子，`node scripts/test_course_navigation.cjs`检查分阶段分页、阅读位置、手机目录与地址恢复；需要数据库、Docker或完整工程的项目单独按README验收，不把未执行计为通过。
 
-本轮三名新 agent 的全部 125 章判定、首轮问题、返修证据和实际运行范围见 [系统教程逐章审核](docs/course-audit.md)。教材审核通过与学习者完成课程分别记录。
+前一轮三名新 agent 的全部125章判定、首轮问题和返修证据见 [系统教程逐章审核](docs/course-audit.md)。最新一轮由编写者逐章复读，范围与逐章练习记录见 [2026-10-17审查记录](docs/teaching-review-20261017.md)，没有新增独立审核。教材审核与学习者完成课程分别记录。
 
 前端阅读展示由 `assets/reader-layout.js`、`assets/reader-layout.css` 统一适配。[阅读展示验证](docs/frontend-reading-review.md)记录改动与实测范围。`node scripts/test_reader_layout.cjs` 检查8种屏幕宽度、原正文DOM、手机段落定位、代码/表格横滚与旧学习记录；发布后用 `SITE_TEST_URL` 指定线上地址运行 `scripts/verify_deployment.cjs`，核对全部125章、19页目录、版本资源及下载包。
 
@@ -130,7 +132,11 @@ node scripts/test_vscode_starter.cjs
 node scripts/test_go_start_path.cjs
 node scripts/test_course_book.cjs
 node scripts/test_course_navigation.cjs
+node scripts/test_code_copy.cjs
+node scripts/test_inline_practice.cjs
 ```
+
+新增的复制检查逐页读取真实剪贴板，并覆盖权限拒绝后的降级、连续点击和学习记录；就地练习检查全部系统章节与知识专题的题目可见性、默认折叠核对、键盘和手机阅读。两项检查可用 `COURSE_BROWSER_EXECUTABLE` 指定 Chromium 路径。受限环境如禁止 `file://`，可对起步与知识讲义检查设置 `SITE_HTTP_ONLY=1`、对系统教程检查设置 `COURSE_HTTP_ONLY=1`；脚本会明确报告跳过本地文件打开，仍运行 HTTP 页面和示例，不把跳过计为通过。
 
 浏览器集成检查位于 `scripts/test_site.cjs`，需要 Playwright 和本机 Edge，测试前先启动上述服务器。它覆盖课程入口、代码预览、完成规则、AI 上下文、记录备份和移动端布局；不要求学习者运行这些开发检查。
 

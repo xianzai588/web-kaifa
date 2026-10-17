@@ -8,6 +8,14 @@ HTTP Server 可以设置 ReadHeaderTimeout、WriteTimeout、IdleTimeout，分别
 
 优雅退出先收到 SIGINT/SIGTERM，再停止接受新连接，给已进行请求有限等待时间，关闭资源，检查错误。`Shutdown` 不会自动管理所有自己启动的后台 goroutine、劫持连接或其他资源；你要设计它们的取消与等待。`ListenAndServe` 在正常 Shutdown 后返回 `http.ErrServerClosed`，不是崩溃。超时到期可采用明确的强制关闭策略，并记录未完成情况。
 
+### 就地练习：等待的父Context
+
+收到信号后，Shutdown等待为什么不能用已经取消的ctx派生？后台任务由谁收尾？
+
+### 参考核对：等待的父Context
+
+已取消父ctx会使等待立即取消；独立期限等退出，后台任务由应用取消并等待。
+
 ## 2. VS Code 完整程序与验证
 
 打开 `exercises/go/go-delivery`，建立模块 `go mod init example.com/learn/go-delivery`，保存 main.go。默认 `go run .` 只检查配置并输出说明；`go run . serve` 才启动服务器。此例标准库、无账号和数据库。
@@ -29,7 +37,8 @@ import (
 
 func main() {
 	port := "8080"
-	if raw := os.Getenv("PORT"); raw != "" { port = raw }
+	// 变量存在但为空也是明确配置，后面的Atoi会拒绝；仅缺失时用8080。
+	if raw, provided := os.LookupEnv("PORT"); provided { port = raw }
 	n, err := strconv.Atoi(port)
 	if err != nil || n < 1 || n > 65535 { fmt.Fprintln(os.Stderr, "PORT 需为 1–65535"); os.Exit(1) }
 	if len(os.Args) < 2 || os.Args[1] != "serve" {
@@ -59,6 +68,7 @@ func main() {
 	case err := <-finished:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
 	case <-ctx.Done():
+		// 信号ctx已取消，退出等待必须使用独立父级，才能真正留出5秒预算。
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := server.Shutdown(shutdownCtx); err != nil {
@@ -101,6 +111,15 @@ ENTRYPOINT ["/server", "serve"]
 ```
 
 第一阶段有 Go 编译器，第二阶段只带运行程序；这份标准库程序关闭 CGO 可静态构建。真实项目有依赖时还要 COPY go.sum、下载模块；有外部 HTTPS 请求时要确认运行镜像的 CA 证书；有时区需求时配置时区数据。不要把此最小文件照搬到所有程序后认为这些条件自动满足。EXPOSE 是声明，不自动公开端口。
+
+### 就地练习：EXPOSE不发布端口
+
+只有EXPOSE8080没有ports，能否直接从主机8754访问？镜像含哪些构建阶段内容？
+
+### 参考核对：EXPOSE不发布端口
+
+EXPOSE只是声明，需显式端口映射；多阶段最终只带运行所需文件，不自动含构建工具。
+
 
 ## 4. Compose：主机端口与容器端口
 
@@ -154,6 +173,14 @@ volumes:
 
 healthcheck表示数据库正在接受连接，`service_healthy`让API在该条件后启动；不证明所需表、索引或迁移已经完成。项目还需版本化迁移步骤，例如在已连接测试库先执行可追踪的建表迁移，再启动API；失败时停止并提供日志，不在每个请求里随意建表。更换schema时要考虑旧数据和回滚策略。验证应真实创建一条记录、重启API与数据库后读取仍在，再验证失败事务回滚；当前健康响应不能代替这些证据。密码从本机环境/受控秘密配置提供，不提交真实值。
 
+### 就地练习：两个端口两处地址
+
+主机映射改8755而容器仍8080，浏览器与容器服务各使用哪个端口？
+
+### 参考核对：两个端口两处地址
+
+浏览器8755，进程内部8080；容器localhost是自己，连接数据库用相应服务名。
+
 ## 5. CI：重复检查，不是自动上线
 
 CI 在干净机器上拉取仓库、配置 Go、运行检查，帮助发现“依赖我本机缓存才成功”。下面是放在仓库 `.github/workflows/go-delivery-check.yml` 的**工作流示例**，仅检查这个独立模块，实际上传仓库后才会触发；复制文字本身不算 Actions 已通过。
@@ -197,6 +224,14 @@ git tag -a v0.1.0 -m "第一版可演示的学习API"
 随后在准备好远程发布时推送该准确tag，并创建对应Release，说明启动命令、平台、Go版本、端口、变更、测试证据和限制。源码tag可以复现对应提交，浮动镜像或依赖仍可能随时间变化，所以正式构建还需锁定依赖、镜像版本/摘要与构建环境。不要把原教材、node_modules、数据库目录、编译产物或密码一股脑提交。
 
 安全改版例子：v0.1.0中的详情接口只按id查询，修复为“id+可信ownerID”，补A/B隔离测试并保存结果，再用新版本v0.1.1描述“修复跨用户读取，登录调用方式不变”。不要改写已发版本标签让它悄悄指向新代码；新版本与清楚变更记录更容易审查和恢复。发布产物涉及外部写入，学习者应依据自己的当前发布意图执行，不把教材命令当作自动授权。
+
+### 就地练习：有YAML不等于执行
+
+工作流文件存在而未触发，go test又显示no test files，能否称CI业务通过？
+
+### 参考核对：有YAML不等于执行
+
+不能；需相同提交远程日志和实际断言。没有测试文件不证明HTTP、退出或数据库验收。
 
 ## 改一个条件
 
