@@ -6,6 +6,14 @@
 
 用户先选 A、再选 B，期望页面以 B 为准。但 A 的处理可能更慢，B 完成后 A 才完成。**最后完成的结果，不一定属于最后一次选择。** 如果每次成功都直接写 DOM，页面会倒退到旧选择。这里已经学过 fetch、Promise、事件与状态，专门解决它们组合后的时间问题。
 
+### 就地练习：最后完成不一定最新
+
+按A慢、B快的顺序发起，先写启动与完成两条顺序。页面最终应取哪个选择？
+
+### 参考核对：最后完成不一定最新
+
+取最后选择B，即使A最后完成。不能按网络完成先后直接覆盖。
+
 ## 三个完整文件与启动
 
 在独立目录保存下列三个文件；终端在这个目录运行 `python -m http.server 8765`，访问 http://127.0.0.1:8765/，Ctrl+C 停止。两个 JSON 都由真实本地 HTTP 请求取得，pause 只在取得数据后人为延迟处理，用于稳定制造完成先后，不能称作真实网络速度测量。
@@ -77,6 +85,14 @@ latest 是所有调用共同读取的最新编号；request 是每次 load 内�
 
 pause 用 `new Promise(...)` 创建待定 Promise：构造器给回调一个 resolve 函数，调用它才成功完成。`setTimeout(resolve, milliseconds)` 安排在给定毫秒后调用 resolve；1000 毫秒是一秒。await pause 等待这个模拟过程。这里的新语法只为制造实验，业务代码不必人为加延迟。
 
+### 就地练习：编号各属于谁
+
+先启动A得到1，再启动B得到2，分别写A/B的本次编号与共享latest。A成功及失败各应怎样？
+
+### 参考核对：编号各属于谁
+
+本次编号1、2不变，共享latest为2；A成功和失败都不得改最新界面。
+
 ## 先预测，再故意破坏保护
 
 先点慢按钮，在 600 毫秒内点快按钮；等一秒，最后应仍是“最后一次快结果”。删除成功分支的编号检查再做同一实验，会先出现快结果，随后被慢结果覆盖。恢复检查。再把慢文件改成坏 JSON，观察旧失败不会覆盖较新选择；若操作太慢，重新刷新后快速点击。
@@ -84,6 +100,14 @@ pause 用 `new Promise(...)` 创建待定 Promise：构造器给回调一个 res
 ## 版本判断与请求取消
 
 编号判断控制“结果是否还能写界面”；AbortController 用于通知 fetch 取消不再需要的请求。controller.signal 是可传给请求的取消信号，controller.abort() 发出取消；取消也会让 Promise 拒绝，需要在 catch 中区分已取消的旧操作。只取消并不能替代所有结果检查，尤其当请求已经完成、后续处理还在进行时。完整 React 请求清理会在后面的组件生命周期章节使用；本节的完整例子使用版本判断。
+
+### 就地练习：取消和写入保护
+
+fetch已完成但数据处理仍在等待时调用abort，能否保证旧处理不更新DOM？
+
+### 参考核对：取消和写入保护
+
+不能自动终止任意后处理；成功、失败及finally的界面更新仍需确认属于当前意图。
 
 ## 独立变式：三次选择与旧失败
 
@@ -120,6 +144,7 @@ let latest = 0;
 const status = document.querySelector("#status");
 const delays = { a: 600, b: 100, c: 300 };
 async function load(name) {
+  // 每次调用固定保存自己的编号；共享latest只记录最后一次意图。
   const current = ++latest;
   status.textContent = `正在读取${name}`;
   try {
@@ -128,9 +153,11 @@ async function load(name) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const value = await response.json();
     if (value === null || typeof value !== "object" || typeof value.name !== "string") throw new Error("字段不合格");
+    // 成功和失败都先检查编号，旧请求不能改掉新选择的界面。
     if (current !== latest) return;
     status.textContent = `${name}：${value.name}`;
   } catch (error) {
+    // 成功和失败都先检查编号，旧请求不能改掉新选择的界面。
     if (current !== latest) return;
     status.textContent = `${name}失败：${error.message}`;
   }
@@ -145,3 +172,11 @@ for (const button of document.querySelectorAll("button[data-name]")) {
 ```
 
 600毫秒内快速按甲→乙→丙，启动顺序a/b/c，通常完成b/c/a，最终必须是c：丙书单。把a.json改名后再试，旧404也不能改c；把c.json改名则最后为c失败，旧a成功不能覆盖它。编号在每次启动时递增，在成功与失败写DOM前都检查。
+
+### 就地练习：最后选择本身失败
+
+让A旧成功很晚到，B最后选择404。写出最终应显示什么，再与仅测慢成功对比。
+
+### 参考核对：最后选择本身失败
+
+保留B失败，不被A成功覆盖；两条方向都验证，才不只保护成功路径。

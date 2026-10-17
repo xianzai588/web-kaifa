@@ -6,6 +6,14 @@
 
 加载中没有结果，失败有错误信息，成功才有结果数组。**先判断处于哪种状态，再读取那个状态实际拥有的字段。** 联合类型用竖线 | 表示“可能是其中一种形状”；它不是 JavaScript 条件里的双竖线 ||。
 
+### 就地练习：加载中没有items
+
+给loading/error/success列出各自真实字段，为什么不把items写成处处可选再随处读取？
+
+### 参考核对：加载中没有items
+
+loading无结果，error有message，success有items；判别后读取真实字段，避免无意义组合。
+
 ## 完整文件与运行入口
 
 继续使用 followup-03 的独立副本，保留原版；将 src/main.ts 完整替换为下方代码。#app 容器由已有 index.html 提供。保存，在此目录运行 npm.cmd run typecheck，再 npm.cmd run dev；macOS/Linux 使用 npm。打开 http://127.0.0.1:8803/，Ctrl+C 停止。
@@ -49,6 +57,14 @@ kind 在每个形状中都是固定字符串，称为字面量类型；它作为
 
 text 首先判断 loading，成立立即 return；否则可能是 error 或 success。第二个判断确认 error，才能读取 message。这个分支也 return，最后剩下 success，所以可读 items.length。缩小范围来自程序实际判断，不是凭作者希望“应该已经成功”。
 
+### 就地练习：两次提前返回
+
+跟踪text函数如何在排除loading、error后得到success。把items读取挪进loading应发生什么？
+
+### 参考核对：两次提前返回
+
+实际判断和return缩小剩余类型；挪到loading会被类型检查拒绝，不能用any压掉。
+
 ## 输出与独立失败实验
 
 页面三项与 Console 三行依次是“加载中”“加载失败”“成功：2项”。先预测空 success 数组会显示什么，再改为 []，结果应为成功：0项。
@@ -58,6 +74,14 @@ text 首先判断 loading，成立立即 return；否则可能是 error 或 succ
 ## 回到实际请求
 
 这节使用固定数组以便专注类型。实际 fetch 的成功、失败、加载流程仍由前面异步代码决定；联合类型只是表达这些真实情况，不能制造请求结果。若把类型用于外部 JSON，仍先验证真实值再构造合适的 State。
+
+### 就地练习：类型声明不发请求
+
+成功类型写items:string[]后，真实fetch返回坏对象会自动变数组吗？
+
+### 参考核对：类型声明不发请求
+
+不会；仍需运行校验与真实请求流程，联合类型只描述已经确定的状态。
 
 ## 判别联合与穷尽分支
 
@@ -82,6 +106,7 @@ function text(state: State): string {
     case "empty": return "没有结果";
     case "success": return `成功：${state.items.length}项`;
     default: {
+      // 新增状态却漏写case时，剩余类型不是never，检查器在此拒绝。
       const exhaustive: never = state;
       return exhaustive;
     }
@@ -102,3 +127,11 @@ export {};
 ```
 
 typecheck后页面两项为“没有结果”“成功：1项”。删除empty分支但保留never检查时应报错；把items读取移进loading也应报错。空结果是实际业务结局，需要真实请求成功且数组为空时才构造，类型声明不会制造服务器响应。
+
+### 就地练习：新增状态不漏处理
+
+添加empty但先不写switch分支，保留never检查，预测typecheck；补分支后核对。
+
+### 参考核对：新增状态不漏处理
+
+剩余empty无法赋给never，检查失败；补明确分支后通过并显示没有结果。

@@ -6,6 +6,14 @@
 
 Node.js 是在本机或服务器执行 JavaScript 的运行环境；本节用它运行前端开发工具。npm 随常见 Node 安装器提供，是下载软件包和执行项目脚本的工具。包是一组可复用的代码或工具，依赖是这个项目使用的其他包。**浏览器显示页面，Node 运行开发工具，npm 安装包；三者职责不同。**
 
+### 就地练习：三个工具分工
+
+将“执行开发工具、安装依赖、显示页面”分别分给Node、npm、浏览器。
+
+### 参考核对：三个工具分工
+
+Node运行开发工具，npm安装包/执行脚本，浏览器显示结果；npm不是网页语言。
+
 ## 从完整项目而不是空目录起步
 
 下载 [TypeScript 起点](../../../assets/downloads/web-followup-03.zip)，解压到自己的独立 followup-03 目录，用 VS Code“打开文件夹”打开它。需要 README 要求的 Node 版本（当前工程 engines 是 >=24.15.0）和可访问包来源的网络。终端当前目录应有 package.json、package-lock.json、index.html、src。先运行 node --version 与 npm.cmd --version。
@@ -46,9 +54,25 @@ macOS/Linux 将 npm.cmd 写为 npm。PowerShell 使用 .cmd 可以避免把 npm 
 | test | Vitest 按工程配置运行测试，不能等同于真实浏览器完整验收 |
 | preview | 在本机查看已构建产物，不等于线上发布 |
 
+### 就地练习：&&的检查边界
+
+typecheck失败时，build脚本里的vite build会继续吗？旧dist存在又能证明什么？
+
+### 参考核对：&&的检查边界
+
+&&使失败后不继续；旧产物仍可存在，不能据预览旧页面称本次构建成功。
+
 ## 锁文件和安装结果
 
 package.json 说明直接依赖与脚本，package-lock.json 记录解析出的实际依赖组合；node_modules 是安装得到的目录。npm ci 要求清单与锁文件一致，按锁安装，必要时重建依赖目录；它不是在源码里增加 CSS 或 HTML。新建项目没有锁文件时才按该项目说明使用 npm install 生成。保存锁文件，不提交 node_modules、dist 或真实环境配置。
+
+### 就地练习：安装目录不入库
+
+列出package.json、package-lock.json、node_modules分别来源与提交选择。
+
+### 参考核对：安装目录不入库
+
+清单和锁记录依赖合同并提交；node_modules为安装产物不提交，清单变化需同步锁。
 
 ## 让命令与错误对应起来
 
@@ -91,3 +115,11 @@ invalidReassign = 2;
 ```
 
 npm run typecheck应失败，npm run build也应在tsc阶段停止。旧dist仍可能存在，不能因preview还能显示A就说坏源码构建成功。删去错误、重建再验收。Windows PowerShell按原说明使用npm.cmd。
+
+### 就地练习：dev与preview对照
+
+先build版本A，再改源码B，只开dev不重建。两个服务分别可能显示哪版？
+
+### 参考核对：dev与preview对照
+
+dev读当前源码B，preview读已生成A；重建后preview才更新，地址和内容来源需分别确认。

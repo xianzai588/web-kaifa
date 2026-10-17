@@ -6,6 +6,14 @@
 
 组件第一次加入界面叫挂载，状态或 Props 改变后重新描述界面叫更新，离开界面叫卸载。请求属于与外部系统交互的副作用，不是“描述当前界面”本身。**不要在组件每次渲染的正文里无条件 fetch；结果更新状态又渲染，可能形成不断请求的循环。**
 
+### 就地练习：渲染不应启动无限请求
+
+在纸上画出渲染体fetch→setState→再渲染的循环，解释请求为何放在合适Effect里。
+
+### 参考核对：渲染不应启动无限请求
+
+渲染描述界面；外部同步需按输入设置并清理，不能每轮渲染无条件重新请求。
+
 ## 完整工程里的三个完整文件
 
 下载 [请求生命周期项目](../../../assets/downloads/web-followup-05.zip)，解压到独立副本并保留原版，先按 README 用 npm.cmd ci、npm.cmd run dev 跑通。随后将 src/App.tsx 完整替换，下列 JSON 放到已有 public 目录。Vite 会把 public 中的文件按原名提供到服务地址，./first.json 相对当前页面地址请求它。
@@ -43,6 +51,7 @@ function RequestPanel(props: RequestPanelProps) {
     }
     load();
     // 地址变更或父组件真的卸载面板时，React 调用这份清理函数。
+    // 返回的是清理函数而非现在abort；它只取消这次Effect拥有的请求。
     return () => controller.abort();
   }, [props.url]);
 
@@ -93,11 +102,27 @@ useEffect 接收设置函数和依赖数组。这里 [props.url] 表示面板读
 
 每次设置新建 controller，把 signal 作为 fetch 第二参数 options 的字段传进去。abort 发出取消信号；signal.aborted 读是否已取消。成功和失败写状态前都检查这份信号，旧操作不能盖掉新选择。这里不是从服务器删除数据，只取消客户端已不需要的操作。
 
+### 就地练习：每次设置自己的控制器
+
+URL从first改second，列出旧清理、新设置顺序，说明为什么不能共用任意别次控制器。
+
+### 参考核对：每次设置自己的控制器
+
+清理旧Effect，再设置新Effect；每份闭包拥有本次controller，避免取消错误操作。
+
 ## 按一次选择追踪数据
 
 首次 App 的 url=./first.json 且 shown=true，RequestPanel 挂载，Effect 设置，状态为加载中；await 取得响应、检查状态、解析 JSON、验证 title 后显示第一份数据。点击第二份更新父状态 url，新 Props 让面板清理旧 Effect 再启动新 Effect。点击“卸载请求面板”把 shown 改为 false，面板被移除，自己的请求被清理；此时改变 URL 不启动面板请求。再点“挂载请求面板”会建立新的面板，以当前 URL 请求，不沿用已退出组件的旧状态。再次选择同一个 URL 不保证重新请求，独立变式再加明确的重试编号。
 
 TypeScript 在严格模式把 catch 的 error 视为 unknown，`error instanceof Error` 先确认它属于 Error，再读取 message；不是所有抛出的值都有这个字段。
+
+### 就地练习：卸载后改URL
+
+面板shown=false时改变URL，预测是否发面板请求；重新挂载时取哪个URL？
+
+### 参考核对：卸载后改URL
+
+卸载面板不执行其Effect；再挂载按当前URL设置新请求，不复用已退出状态。
 
 ## 真实验证与故障实验
 
@@ -110,6 +135,14 @@ TypeScript 在严格模式把 catch 的 error 视为 unknown，`error instanceof
 ## 依赖数组不能当静音按钮
 
 Effect 中读到的反应性输入应反映在依赖中；删除 url 可让检查不再重跑，但界面会继续用旧值。不要为消除请求数量就删依赖。原项目 src/useEvents.ts 是后续完整状态抽取参考；Vue 的生命周期/watch 有相应机制，第一次沿选定框架完成，不混用两套钩子。参考：[React useEffect](https://react.dev/reference/react/useEffect)。
+
+### 就地练习：删依赖不是修请求
+
+Effect用props.url却从依赖删掉它，为什么可能继续显示旧数据？
+
+### 参考核对：删依赖不是修请求
+
+输入改变没有触发所需同步；应修正依赖与资源管理，不靠删依赖掩盖。
 
 ## 独立变式：同地址也能明确重试
 
@@ -146,3 +179,11 @@ App返回的main中添加按钮，并替换原RequestPanel用法：
 ```
 
 注意替换原条件块，不追加第二个面板。URL不变时普通选择不必请求，重试编号变化则设置新Effect。Network限速后连续重试、切到404、卸载再挂载，最后只保留当前意图；每次清理abort本次控制器。请求已在点击前完成不能证明取消实验成功，应在途时再验收。
+
+### 就地练习：同URL新意图
+
+同URL普通选择与明确重试分别需要什么状态变化？请求的finally写加载标志还要检查什么？
+
+### 参考核对：同URL新意图
+
+重试可递增编号并放入依赖；所有状态出口含finally都要确认仍属当前未清理操作。

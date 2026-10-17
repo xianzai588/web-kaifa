@@ -6,6 +6,14 @@
 
 TypeScript 在 JavaScript 上增加开发时的类型描述和检查。**浏览器运行的是处理后的 JavaScript；类型检查不自动替你验证实际网络数据。** 这里先给一个小函数描述输入和返回值，不从大型抽象或整套接口开始。
 
+### 就地练习：类型何时检查
+
+把id写成字符串后先typecheck，再观察dev。dev能打开是否代表类型检查通过？
+
+### 参考核对：类型何时检查
+
+不代表；开发服务可能转换并运行，typecheck单独检查开发时约束，浏览器执行处理后的JS。
+
 ## 在已经跑通的独立项目里替换一个完整文件
 
 使用 [Node、npm 与项目脚本](#/learn/web/web-npm) 中的 [followup-03 源码包](../../../assets/downloads/web-followup-03.zip)，按 [项目 README](../../../exercises/web/followup-03/README.md) 跑通并保留一份原版副本。在用于本节的副本中，将 src/main.ts 完整替换为下方内容；保留 package.json、锁文件、tsconfig.json 和 index.html。index.html 的模块入口指向 src/main.ts，#app 是已有显示容器。不要新建一个未被入口导入、也未被配置包含的文件后期待自动执行。
@@ -43,6 +51,14 @@ export {};
 
 执行时先定义 label，再建立对象，调用得到 result，输出后写到 #app。TypeScript 推断也是常见方式：能从值确定类型时，不必每个局部变量都重复写注解。
 
+### 就地练习：描述与实际对象
+
+把type EventItem、activity:EventItem和{id:1,title:"Go"}分别归入类型描述、类型使用、运行值。
+
+### 参考核对：描述与实际对象
+
+前两处给检查器说明，字面量才是实际对象；type不会创建运行记录。
+
 ## 检查、运行与可观察结果
 
 ```powershell
@@ -61,6 +77,14 @@ macOS/Linux 使用 npm。浏览器打开 http://127.0.0.1:8803/，页面与 Cons
 ## 网络输入仍是另一条边界
 
 服务器 JSON 在程序运行时才到达。写 `as EventItem` 是向检查器作类型断言，不会检查真实字段、转换数字或补上 title。沿用 fetch 章节的 typeof、空值和数组检查，验证真实结构后才使用；下一节学习如何让检查器跟着已做的判断缩小类型范围。
+
+### 就地练习：as不会校验
+
+服务器给{"id":"1"}，代码只写as EventItem。id会变数字、title会补上吗？需要什么真实判断？
+
+### 参考核对：as不会校验
+
+都不会；实际检查对象/非null/非数组及字段类型与范围，再构造可信值。
 
 ## 独立变式：给采购计算一个明确类型
 
@@ -83,6 +107,7 @@ TypeScript常能推断局部类型，重要边界如函数参数、返回值、�
 ```typescript
 type Product = { name: string; price: number; quantity: number };
 function totalCost(product: Product): number {
+  // number注解不保证有限、非负或整数，这些是实际执行的业务校验。
   if (!Number.isFinite(product.price) || !Number.isFinite(product.quantity)
       || product.price < 0 || !Number.isInteger(product.quantity) || product.quantity < 0) {
     throw new Error("价格或数量不合格");
@@ -101,3 +126,11 @@ export {};
 ```
 
 typecheck后打开dev，页面和日志为“笔记本 / 21元”。数量改0得到0元；把quantity写成"3"或返回文字而声明number，typecheck拒绝。价格-1虽然类型为number，本实现仍在运行时拒绝；这是显式校验的效果，不能归功于类型注解。
+
+### 就地练习：number也包含坏业务值
+
+给price设-1、NaN、Infinity，说明number注解能否保证价格可用。
+
+### 参考核对：number也包含坏业务值
+
+都仍属number；需Number.isFinite及业务范围等运行校验，注解不自动执行。
