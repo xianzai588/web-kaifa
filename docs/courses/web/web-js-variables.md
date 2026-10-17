@@ -18,11 +18,27 @@
 
 typeof 是读取类型的运算符，例如 typeof name 返回文字 string。const 要在声明时给出值，并且不能换成另一个值；后续数组/对象章节会说明“不能重新赋值”和“内部内容不能变”是不同限制。
 
+### 就地练习：旧判断会自动更新吗
+
+令minutes=20、reached=minutes>=30，再将minutes改35，打印reached；重新计算后再打印。
+
+### 参考核对：旧判断会自动更新吗
+
+先false后true；保存的布尔值不会随输入自动重算。
+
 ## 绑定、原始值与可变对象
 
 const 禁止重新给同一个绑定赋值，不自动冻结对象内部属性；let 允许重新赋值。number 使用双精度浮点表示普通数字，整数大于 Number.MAX_SAFE_INTEGER 可能失去精度，必要时另学 bigint。typeof null 得到 object 是语言的历史行为，判断 null 应直接用 value === null。
 
 未赋值的 let 初值是 undefined，但在声明执行之前读取会触发 ReferenceError。局部变量用 let/const，不省略关键字意外创建全局状态。函数、对象和数组是后续章节的具体值，先分清“名字绑定”和“对象内部内容”。
+
+### 就地练习：const限制哪一层
+
+学过数组后回看：比较const items=[]后的push与把items重新赋成另一个数组。现在先说明绑定与内容的区别。
+
+### 参考核对：const限制哪一层
+
+push修改数组内容可行；重新给const绑定另一数组抛错，const不自动冻结对象。
 
 ## 先看一个完整例子
 

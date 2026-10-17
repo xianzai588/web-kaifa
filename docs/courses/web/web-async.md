@@ -12,11 +12,27 @@ load() 开始 → 执行到 await → 等待完成 → const value 得到数字 
 
 将 resolve 改成 reject(new Error("加载失败"))，预期 catch 打印加载失败，不打印成功数字。把 console.log("调用之后") 写在 load() 后面，可以观察这条同步日志先于函数里的等待结果。本例已经在内部处理错误，不额外抛出；若函数移除了内部 catch，调用者就必须处理返回 Promise 的拒绝。
 
+### 就地练习：暂停哪段代码
+
+在load()调用后立刻打印“调用后”，内部await已成功的Promise，预测先后。
+
+### 参考核对：暂停哪段代码
+
+调用后同步日志先于await后的结果；等待暂停当前async函数，不暂停整个页面。
+
 ## async 总返回 Promise，await 不阻塞整个页面
 
 async函数即使return普通值，也会把它作为Promise的完成值；await暂停当前async函数后续步骤，不会让整个浏览器停止。await一个拒绝Promise会在当前位置抛出异常，因此用相应try/catch处理，或把拒绝交给调用者。
 
 两个独立请求若逐个await会依次等待；确实互不依赖时可用Promise.all并发等待。并发会增加服务负载，也需要决定失败、取消和旧结果如何处理。不要为了并发把必须使用前一步结果的操作错误地同时启动。
+
+### 就地练习：函数返回仍是Promise
+
+写async函数return 3，对比直接调用结果与await或then得到的值。
+
+### 参考核对：函数返回仍是Promise
+
+直接调用得到Promise，完成值才是3；调用方也要处理可能拒绝，async不把函数变成后台线程。
 
 ## 先看一个完整例子
 
@@ -99,6 +115,7 @@ bill返回Promise，then读到的才是数字23。改Promise.resolve(20)为Promi
 <script>
 async function bill() {
   const price = await Promise.resolve(20);
+  // 这里的23成为返回Promise的完成值，调用者仍需then或await读取。
   return price + 3;
 }
 bill().then(value => console.log("账单", value)).catch(error => console.log(error.message));

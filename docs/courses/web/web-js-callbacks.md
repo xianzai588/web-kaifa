@@ -12,11 +12,27 @@
 
 filter 不会删除原 scores 中的项，所以 scores.length 仍为 3。命名函数 passed 的 return 必不可少；删掉 return 后每项都返回 undefined，被当作不保留，结果是空数组。JSON.stringify 已在前面的 JSON 节介绍，这里只用来稳定展示数组文字。
 
+### 就地练习：交函数还是先调用
+
+在passed里加日志，记录filter收到各项的顺序；解释passed()与passed的区别。
+
+### 参考核对：交函数还是先调用
+
+filter同步依次交入40、60、80；passed()先得到返回值，filter需要的却是函数。
+
 ## 回调执行时机与真假结果
 
 把函数交给filter时不写调用括号，filter会在遍历每项时调用它。回调返回可判为true的值则保留该项，没写return通常得到undefined，全部被丢掉。filter返回新数组，不自动更新你原来那个变量。
 
 数组回调还可以接收下标与数组本身，初学只取需要的参数。箭头表达式`x => x > 0`隐式返回；改成`x => { x > 0; }`却没有返回，这个一对花括号就足以改变结果。先用命名函数看清输入与返回，再简化写法。
+
+### 就地练习：漏return
+
+用score=>{score>=60;}过滤[40,60,80]，预测后运行，再补return。
+
+### 参考核对：漏return
+
+都返回undefined所以得到[]；补return恢复[60,80]。
 
 ## 先看一个完整例子
 
@@ -97,6 +113,7 @@ filter把40、60、80依次交给passed，保留后两项。调用处传passed�
 <p>打开开发者工具的 Console，核对下列日志。</p>
 <script>
 function isPositiveEven(value) {
+  // 两个条件都满足才保留；0虽然是偶数，却不满足严格大于0。
   return value > 0 && value % 2 === 0;
 }
 const values = [0, -2, 1, 2, 3, 4];

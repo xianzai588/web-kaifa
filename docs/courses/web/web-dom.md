@@ -12,11 +12,27 @@
 
 打开后看 Elements，h1 里是新标题；再看磁盘文件或“查看网页源代码”，仍是旧标题。刷新会重新读源码再执行脚本。将选择器改为 #missing，null 没有可赋值的 textContent，控制台会报 TypeError。恢复后再继续下一节事件。
 
+### 就地练习：当前页面不等于文件
+
+把h1改为新标题后对比Elements和查看源代码，再刷新并解释脚本作用。
+
+### 参考核对：当前页面不等于文件
+
+DOM有新文字，源文件仍旧；刷新重新读源码再执行脚本，不会回写磁盘。
+
 ## 选择单项、多项与等待文档
 
 querySelector只返回第一个匹配元素，找不到返回null；querySelectorAll返回一组匹配结果，没有项目时是空集合，不是null。脚本执行要晚于需要的元素存在，可放body末尾或用defer加载外部脚本。
 
 textContent把字符串作为文字，innerHTML则解析为标记。想显示用户输入的`<strong>内容</strong>`时，优先textContent保留原文，不要让输入改变结构。改DOM只改变当前文档，刷新重新读取源码，不会自动保存回index.html。
+
+### 就地练习：找不到时返回什么
+
+分别用querySelector与querySelectorAll选择不存在的类。比较null与空集合，并决定写文字前如何保护。
+
+### 参考核对：找不到时返回什么
+
+前者null，后者空集合；单元素先检查存在，不对null访问textContent。
 
 ## 先看一个完整例子
 

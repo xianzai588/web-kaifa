@@ -12,11 +12,27 @@
 
 输入框通常使用 input 事件来响应内容变化，表单使用 submit 来响应提交。下一节先创建列表，再把输入事件和筛选连接起来。先用 Tab/Enter 点两次，应得到 2；刷新后内存计数重新初始化为 0。
 
+### 就地练习：登记后有几次变化
+
+加载按钮页先不操作，再用键盘激活两次，最后刷新，记录四个时点的数量。
+
+### 参考核对：登记后有几次变化
+
+初始0、未操作仍0、两次后2、刷新0；登记回调不立即调用，也没有持久化。
+
 ## 事件对象、默认动作与传播
 
 监听器接收event，可读取type、target等信息。target是事件起点，currentTarget是当前处理函数绑定的元素；子元素点击时二者可能不同。事件可以向祖先传播，父容器可据target做委托，但要验证目标属于预期控件。
 
 preventDefault阻止可取消的默认动作，例如提交或链接导航；它不自动停止传播。stopPropagation阻止继续传播，也不替代业务校验。addEventListener传函数而非调用结果；解绑要保留同一个函数引用，重复绑定匿名函数可能导致一次点击处理多次。
+
+### 就地练习：target和currentTarget
+
+在button内放span，给button绑定处理函数，点击span后打印两个目标。preventDefault会自动停止冒泡吗？
+
+### 参考核对：target和currentTarget
+
+target是span，currentTarget是button；阻止默认动作不自动阻止传播。
 
 ## 先看一个完整例子
 
@@ -93,6 +109,7 @@ result.textContent = String(count);
 <script>
 let count = 0;
 const output = document.querySelector("#count");
+// 两个按钮都调用同一渲染函数，共享同一个count与显示位置。
 function render() { output.textContent = String(count); }
 document.querySelector("#like").addEventListener("click", () => { count++; render(); });
 document.querySelector("#undo").addEventListener("click", () => { if (count > 0) count--; render(); });

@@ -6,6 +6,14 @@
 
 JSON使用双引号包住键与字符串，表示数组、对象及一些基本值。JavaScript对象可有方法和其他值，并非任何对象都能原样表示成JSON。JSON.parse解读文字，JSON.stringify输出JSON文字。
 
+### 就地练习：格式不是连接
+
+将对象stringify再parse，分别看类型和字段。这个过程会不会发请求或保存文件？
+
+### 参考核对：格式不是连接
+
+只做文字与值转换，不自动联网或保存；序列化结果是string。
+
 ## 在文字和对象之间转换
 
 JSON（JavaScript Object Notation）是一种数据文字格式，可用来保存或传输数据。它不是网络连接，也不会自己更新页面。**JSON 字符串与解析后的 JavaScript 对象是两个不同的值。**
@@ -15,6 +23,14 @@ JSON（JavaScript Object Notation）是一种数据文字格式，可用来保�
 `JSON.parse(text)` 把合法文字解析成值；`JSON.stringify(item)` 把可表示的值转成 JSON 文字。本例 text 的类型是 string，item 才能按 item.title 读取属性。stringify 返回新字符串，不改变 item 的类型。
 
 在独立目录保存完整 index.html，浏览器打开，F12 的 Console 刷新后应出现下方三行。删除 JSON 键周围的双引号，会看到 SyntaxError（语法错误），本次脚本后续语句可能停下；恢复后再读后面的 try/catch 章节。合法的 `{"seats":"两人"}` 仍可能不符合“seats 必须为数字”的业务要求。
+
+### 就地练习：合法仍可能不合要求
+
+比较分钟为20、"20"及带尾逗号三份JSON，区分格式与业务字段。
+
+### 参考核对：合法仍可能不合要求
+
+前两份可解析，但第二份分钟是字符串；尾逗号使格式失败，格式之后还要校验字段。
 
 ## 完整例子
 
@@ -95,3 +111,11 @@ console.log(restored[1].title, restored[1].minutes);
 JSON只有对象、数组、字符串、数字、布尔、null，不能保存函数、undefined、循环引用或任意类的行为。JSON.stringify并不是所有对象的通用深拷贝工具，Date等类型也有自己的序列化规则。
 
 JSON.parse只确认格式可解析，不保证字段符合需求。null、数组和对象都是合法JSON，但可能不符合某个接口。数字字段若变成"20"，仍是合法JSON文字，却不是需要的number；处理不可信输入应检查类型、有限范围和必要字段。
+
+### 就地练习：不是通用深拷贝
+
+对含undefined属性的对象stringify，再考虑循环引用，说明通用拷贝为何不成立。
+
+### 参考核对：不是通用深拷贝
+
+对象的undefined属性通常被省略，循环引用抛错，方法及特殊类型行为也不能原样保留。

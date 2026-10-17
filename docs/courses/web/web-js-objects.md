@@ -12,11 +12,27 @@
 
 点号后是固定属性名；如果名字来自变量，可以用 `event[key]`。读取不存在的属性得到 undefined；拼错 title 为 tilte 不会自动纠正。后面读网络数据时，既要检查 JSON 能否解析，也要检查实际属性名与类型。
 
+### 就地练习：赋值和浅副本
+
+令same=event、copy={...event}，分别改seats，每步打印原值。
+
+### 参考核对：赋值和浅副本
+
+same共享对象会改原值；copy里的普通数字字段可独立赋值。
+
 ## 属性访问、解构与浅复制
 
 点访问适合固定名字，`object[key]`适合运行时决定的属性名。`const {title, seats=0} = event`可解构字段，默认值只在字段为undefined时生效。属性拼错返回undefined，业务形状应主动验证，不能只凭“是对象”就使用。
 
 对象展开只复制一层属性。若event包含address对象，`copy.address === event.address`仍可能为true。方法中的this取决于调用方式；把方法单独取出交给事件监听器时，不能想当然认为this仍指原对象。优先显式参数与可说明的数据流。
+
+### 就地练习：嵌套只复制一层
+
+给对象加address.city，展开成copy后修改copy.address.city，并比较两个address引用。
+
+### 参考核对：嵌套只复制一层
+
+内层引用相同，原城市也变；新外层不表示所有内部对象都独立。
 
 ## 先看一个完整例子
 
@@ -85,6 +101,7 @@ const copy = { ...event };
 copy.seats = 3;
 console.log(event.seats, copy.seats);
 const nested = { address: { city: "杭州" } };
+// 只复制外层，address仍指向原来的内层对象。
 const shallow = { ...nested };
 shallow.address.city = "苏州";
 console.log(nested.address.city);

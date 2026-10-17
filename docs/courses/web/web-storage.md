@@ -12,11 +12,27 @@ localStorage 是浏览器提供的本地键值存储。键 key 是字符串名�
 
 在该独立页面的 Console 输入 `localStorage.getItem("course-book-storage-demo")` 观察原文；备份后，用 setItem 只将这个键改成坏 JSON。刷新应显示读取失败；再次主动点保存才恢复演示值。不要执行 localStorage.clear，它会影响这个来源的其他记录。
 
+### 就地练习：缺键不是坏JSON
+
+只在专用练习键上比较未保存、合法对象、坏JSON三种读取。哪种能显示默认提示，哪种必须保留原文？
+
+### 参考核对：缺键不是坏JSON
+
+缺键null可提示未保存；合法对象还需字段校验；坏JSON警告并保留原串，不能自动覆盖。
+
 ## 来源、异常与恢复策略
 
 localStorage按来源隔离，来源包括协议、主机和端口；localhost与127.0.0.1也不同。它是同步字符串存储，写满配额或浏览器策略限制时可能抛错。用户可以编辑它，因此不适合放密码、可靠权限或只能由服务器确认的事实。
 
 读失败时保留原字符串供备份与排错，不能在catch里立刻写默认值覆盖。需要迁移格式时增加明确版本，先验证再迁移，失败可回退；多标签页还要考虑storage事件与覆盖冲突，单页保存成功不证明跨端同步。
+
+### 就地练习：同一电脑也可能不同来源
+
+比较http的localhost:8765、127.0.0.1:8765、127.0.0.1:8766三处存储是否相同。
+
+### 参考核对：同一电脑也可能不同来源
+
+主机或端口变化均改变来源，不能期待共享；本地保存也不是跨设备同步。
 
 ## 先看一个完整例子
 
@@ -26,7 +42,7 @@ localStorage按来源隔离，来源包括协议、主机和端口；localhost�
 python -m http.server 8765
 ```
 
-需要已安装 Python；可先按 [Web 环境](#/setup/web-environment) 或 [模块章节的本地HTTP运行步骤](#/learn/web/web-modules) 准备，也可使用该教程说明的 Live Server。浏览器访问 http://127.0.0.1:8765/，不要双击成 file 地址；服务保持运行，Ctrl+C 停止。修改后先保存，再刷新同一个 HTTP 地址。
+需要已安装 Python；可先按 [Web 环境](#/setup?topic=web) 或 [模块章节的本地HTTP运行步骤](#/learn/web/web-modules) 准备，也可使用该教程说明的 Live Server。浏览器访问 http://127.0.0.1:8765/，不要双击成 file 地址；服务保持运行，Ctrl+C 停止。修改后先保存，再刷新同一个 HTTP 地址。
 
 ```html
 <!doctype html>
@@ -119,6 +135,7 @@ try {
   const raw = localStorage.getItem(key);
   if (raw === null) { status.textContent = "尚未保存"; }
   else {
+    // 格式成功之后还要验证字段；失败时不覆盖raw，保留恢复机会。
     const value = JSON.parse(raw);
     if (!valid(value)) throw new Error("字段不合格");
     topic.value = value.topic;

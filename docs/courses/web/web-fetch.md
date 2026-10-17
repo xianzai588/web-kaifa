@@ -23,11 +23,27 @@ HTTP（超文本传输协议）是一套让客户端与服务器交换消息的�
 
 F12 → Network（网络）→ 刷新 → 点 data.json。Headers 中先看 Request URL、Request Method、Status Code，再看 Response 的 JSON 正文。先读懂这些位置，再学习自定义头；本节不要求盲写任何请求头。
 
+### 就地练习：404是收到响应
+
+为正常JSON、文件不存在、停止服务写出fetch返回/拒绝与后续处理路径。
+
+### 参考核对：404是收到响应
+
+正常与404都可能返回Response，先检查ok；连接失败通常拒绝Promise，进入catch。
+
 ## 网络成功、HTTP成功与业务成功
 
 fetch通常只在网络/策略等失败时拒绝Promise，HTTP404或500仍可能正常返回Response，所以先检查response.ok。正文是流，常规json/text消费一次后不能任意再读一次；需要两份时先了解clone及其成本。
 
 跨来源请求还受CORS约束，no-cors并不能让脚本随意读取响应。Cookie是否发送取决于credentials与Cookie规则，后端也必须正确授权。客户端校验改善体验，服务器仍要验证所有输入；浏览器显示“提交成功”必须有真实成功响应。
+
+### 就地练习：格式和字段再分开
+
+依次让data.json为坏JSON、{"title":123}、{"title":"Go"}，记录失败发生在哪一步。
+
+### 参考核对：格式和字段再分开
+
+分别解析失败、形状校验失败、显示成功；HTTP200只通过传输状态这一关。
 
 ## 先看一个完整例子
 
@@ -124,6 +140,7 @@ async function load() {
     const response = await fetch("./book.json");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const book = await response.json();
+    // JSON合法仍可能是null、数组或错误字段，完整校验后才更新成功界面。
     if (book === null || typeof book !== "object" || Array.isArray(book)
         || typeof book.name !== "string" || typeof book.pages !== "number"
         || !Number.isFinite(book.pages) || book.pages < 0) throw new Error("书籍字段不合格");

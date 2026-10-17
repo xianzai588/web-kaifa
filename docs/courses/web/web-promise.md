@@ -14,11 +14,27 @@ Promise 是保存一次操作最终结果的对象，状态可能是 pending（�
 
 失败实验要把整行改为 `Promise.reject(new Error("失败")).catch(error=>console.log(error.message));`，不是只把 resolve 名字换掉而不接错误。预期先“开始”“结束”，再“失败”。登记回调不会让前面的同步计算自动变成并行。
 
+### 就地练习：回调比同步日志晚
+
+把then前后各放日志，初始完成值设5。先排列日志顺序，再删除then回调的return观察下一级接到什么。
+
+### 参考核对：回调比同步日志晚
+
+同步日志先，回调稍后；缺return会使下一步得到undefined，不能把Promise对象当数字。
+
 ## 状态只确定一次，返回值形成下一条链
 
 Promise有待定、完成、拒绝三种状态，一旦确定就不会改成另一种。构造函数传入的执行器立即运行，then/catch回调通过微任务安排在当前同步代码之后。then返回新的Promise，回调返回普通值会成为下一步完成值，抛错则成为下一步拒绝。
 
 需要等待多项时Promise.all要求全部成功，任一拒绝就拒绝；allSettled收集每项结局。它们不替你限制并发数量或取消已开始的任务。先清楚每个回调交出了什么，再决定用哪种组合。
+
+### 就地练习：失败不会自动取消同伴
+
+两个独立任务交给Promise.all，其中一个拒绝。另一个已启动任务会自动停止吗？写出还需的取消设计。
+
+### 参考核对：失败不会自动取消同伴
+
+all拒绝不自动终止其他工作；需依赖操作支持取消并传递信号，另行决定是否收集各项结局。
 
 ## 先看一个完整例子
 
@@ -96,6 +112,7 @@ console.log("结束");
 <p>打开开发者工具的 Console，核对下列日志。</p>
 <script>
 console.log("开始");
+// 第一个then返回12，后一个then才接到转换后的值；不是链外同步取值。
 Promise.resolve(4).then(value => value * 3).then(value => console.log(value));
 Promise.reject(new Error("订单无效")).catch(error => console.log(error.message));
 console.log("同步结束");

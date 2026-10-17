@@ -12,11 +12,27 @@ render 一次做四步：读取输入 → 筛选得到 found → 写 found.lengt
 
 空字符串被所有标题 includes 匹配，因此清空输入显示全部两项。“编程”显示一项，“不存在”显示零项。前面说的“状态”不要求一定是一个名为 state 的对象：这里 input.value 就承载当前查询。以后框架会把这个来源与更新流程组织到组件里。
 
+### 就地练习：一个结果更新两处
+
+给查询“编程”、无命中、空串分别写数量和列表，再实际输入。
+
+### 参考核对：一个结果更新两处
+
+依次1、0、2项，数量与行数都来自同一found；清空显示全集。
+
 ## 原始状态与派生显示
 
 源数据和查询词是状态，结果列表与数量是按它们算出的派生值。一次render先算出同一份filtered，再用它更新数量和所有行；不要把页面旧数字当新的数据来源。
 
 输入事件input会随用户编辑触发，change通常在提交修改或失焦等时机发生，按需求选。空查询应有明确规则；大小写、两端空白和是否保留原数据都先定义，再写filter。后续异步请求还要加入时间顺序保护，不能把同步筛选的正确性直接推广到网络。
+
+### 就地练习：别把旧显示当状态
+
+若只更新列表而数量不变，应该从DOM旧数量再加减，还是由同一筛选结果重新计算？
+
+### 参考核对：别把旧显示当状态
+
+由同一派生结果重算；旧显示可能过期，不应成为第二套数据来源。
 
 ## 先看一个完整例子
 
@@ -108,6 +124,7 @@ const list = document.querySelector("#books");
 const total = document.querySelector("#total");
 function render() {
   const keyword = query.value.trim();
+  // 一次计算供数量和列表共同使用，避免两个位置采用不同筛选结果。
   const filtered = books.filter(book => book.name.includes(keyword));
   total.textContent = String(filtered.length);
   list.replaceChildren();
