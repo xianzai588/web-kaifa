@@ -8,6 +8,14 @@
 
 **目录里的文件不因出现在屏幕上就自动可调用；包外使用函数需要正确 import 和导出的名字。** 已学前置是 [函数](../../../index.html#/learn/go/go-functions) 与 [错误处理](../../../index.html#/learn/go/go-errors)。标准库 fmt 随 Go 安装，不用另外下载。
 
+### 就地练习：路径从哪里来
+
+模块为example.com/book/packages，函数在calc/add.go。写出main的导入路径、调用名和calc文件的package名。
+
+### 参考核对：路径从哪里来
+
+导入example.com/book/packages/calc，调用calc.Add，文件声明package calc。路径与调用名不是同一种写法。
+
 ## 建立新的独立目录
 
 新建 packages 文件夹，在 VS Code 打开它，终端核对正在这个目录。这个例子的导入路径与模块名字有关，不沿用别的课程模块名：
@@ -27,6 +35,14 @@ packages/
 ```
 
 本地模块路径是本练习的名称，不要求访问 example.com。若以前误用其他模块名，可以建立一个新的独立目录重试，避免边改 import 边猜路径。
+
+### 就地练习：同名文件夹不等于同一模块
+
+建立示例目录树后打开go.mod，逐项核对module行、calc目录与import。模块名若改为example.com/mine，哪个位置也要更新？
+
+### 参考核对：同名文件夹不等于同一模块
+
+main中对应导入路径要变为example.com/mine/calc；package calc与calc.Add不用随模块路径改名。
 
 ## 两个完整源码文件
 
@@ -124,3 +140,11 @@ func main() {
 被导入包先初始化包级变量，再运行 init，最后才进入 main；init 不手动调用，也不带参数和结果。包之间不能循环导入；若 calc 又依赖 main，需要调整共同数据或依赖方向，不能靠改 import 别名解决。internal 目录还受父目录树的导入范围限制，不是“同仓库任何位置都能用”。
 
 第三方包按官方文档使用 `go get 包路径@版本`；`go mod tidy` 整理源码真实需要的依赖，go.sum 保存下载内容校验。提交 go.mod 与 go.sum，别提交模块缓存。GOPROXY 决定下载来源，GOPRIVATE 告诉工具哪些路径按私有模块处理；它们不是给任意私有仓库自动授予权限。
+
+### 就地练习：别名不会解决循环
+
+假设calc又导入入口包，给两边import加不同别名能否解决循环？画出依赖箭头，并提出拆出公共类型的方向。
+
+### 参考核对：别名不会解决循环
+
+别名只改文件里的引用名，循环仍存在。让入口依赖calc，公共类型放在双方都能依赖且不反向引用入口的包中。

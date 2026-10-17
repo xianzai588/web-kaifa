@@ -141,18 +141,57 @@
     notice.hidden = false;
     noticeTimer = setTimeout(() => { notice.hidden = true; undoAction = null; }, undo ? 14000 : 4000);
   }
+  const copyFeedback = new WeakMap();
   async function copyText(text, button) {
-    const original = button?.textContent;
+    const previous = button && copyFeedback.get(button);
+    const original = previous?.label || button?.textContent;
+    if (previous) clearTimeout(previous.timer);
     try {
-      if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
-      else {
+      let copied = false;
+      if (navigator.clipboard?.writeText) {
+        try { await navigator.clipboard.writeText(text); copied = true; } catch (_) { /* Try the local-file compatible path below. */ }
+      }
+      if (!copied) {
+        const focused = document.activeElement;
         const area = document.createElement('textarea'); area.value = text; area.style.position = 'fixed'; area.style.left = '-9999px';
-        document.body.append(area); area.select(); const success = document.execCommand('copy'); area.remove();
+        let success;
+        try { document.body.append(area); area.select(); success = document.execCommand('copy'); }
+        finally { area.remove(); focused?.focus({ preventScroll: true }); }
         if (!success) throw new Error('copy failed');
       }
-      if (button) { button.textContent = '已复制'; setTimeout(() => { if (button.isConnected) button.textContent = original; }, 2200); }
-    } catch (error) { notify('浏览器没有允许复制。请手动选中要复制的文字，使用 Ctrl+C（Mac 为 Cmd+C）或复制菜单。'); }
+      if (button) {
+        button.textContent = '已复制';
+        const timer = setTimeout(() => { if (button.isConnected) button.textContent = original; copyFeedback.delete(button); }, 2200);
+        copyFeedback.set(button, { label: original, timer });
+      }
+    } catch (error) {
+      if (button) { button.textContent = original; copyFeedback.delete(button); }
+      notify('浏览器没有允许复制。请手动选中要复制的文字，使用 Ctrl+C（Mac 为 Cmd+C）或复制菜单。');
+    }
   }
+  // Older source excerpts and dynamically rendered prompts share the same copy support.
+  // Keep the buttons already owned by the course, setup and knowledge readers.
+  function prepareCodeCopies(root) {
+    root.querySelectorAll('pre').forEach(pre => {
+      if (pre.closest('.code-copy-block') || pre.parentElement.matches('.book-code,.setup-code,.knowledge-code,.go-init-command')) return;
+      const wrapper = document.createElement('div'); wrapper.className = 'code-copy-block';
+      const button = document.createElement('button'); button.type = 'button'; button.className = 'button small';
+      button.dataset.codeCopy = ''; button.textContent = '复制这段内容';
+      button.setAttribute('aria-label', '复制下方完整内容');
+      pre.replaceWith(wrapper); wrapper.append(button, pre);
+    });
+  }
+  const codeCopyObserver = new MutationObserver(records => {
+    // Observe additions only: changing button feedback must not create more controls.
+    if (records.some(record => [...record.addedNodes].some(node => node.nodeType === 1 && (node.matches('pre') || node.querySelector('pre'))))) {
+      prepareCodeCopies(main); prepareCodeCopies(document.querySelector('#assistant-root'));
+    }
+  });
+  [main, document.querySelector('#assistant-root')].forEach(root => codeCopyObserver.observe(root, { childList: true, subtree: true }));
+  document.addEventListener('click', event => {
+    const button = event.target.closest('[data-code-copy]');
+    if (button) { const pre = button.parentElement.querySelector('pre'); if (pre) copyText(pre.textContent, button); }
+  });
   function download(filename, content, type) {
     const url = URL.createObjectURL(new Blob([content], { type }));
     const link = document.createElement('a'); link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove();

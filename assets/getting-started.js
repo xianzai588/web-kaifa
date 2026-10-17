@@ -40,7 +40,7 @@
       button.dataset.setupSnippet=pre.id;button.textContent='复制这段内容';
       button.setAttribute('aria-label',`复制第 ${i+1} 段内容`);
       pre.replaceWith(wrapper);wrapper.append(label);
-      if(language!=='output')wrapper.append(button);
+      button.textContent=language==='output'?'复制输出':'复制这段内容';wrapper.append(button);
       wrapper.append(pre);
     });
     return `<div class="setup-layout"><nav class="setup-toc" aria-label="本页步骤"><p>跳到你正在做的步骤</p>${toc}${selected.id==='ask'?'<button type="button" data-setup-jump="question-workshop">直接填写我的问题 →</button>':''}</nav><article class="markdown setup-article">${fragment.innerHTML}</article></div>`;

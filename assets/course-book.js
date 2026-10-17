@@ -50,7 +50,7 @@
   });
   content.content.querySelectorAll('h2,h3').forEach((heading,index)=>{heading.id=scope+'-'+item.id+'-'+index;heading.tabIndex=-1;});
   content.content.querySelectorAll('h3').forEach(heading=>{
-   if(!heading.textContent.startsWith('参考答案'))return;
+   if(!/^参考(答案|核对)/.test(heading.textContent))return;
    const details=document.createElement('details'),summary=document.createElement('summary');
    details.className='book-answer';summary.textContent=heading.textContent;details.append(summary);
    let next=heading.nextElementSibling;
@@ -60,10 +60,10 @@
   content.content.querySelectorAll('pre').forEach((pre,index)=>{
    const language=pre.querySelector('code')?.className.replace('language-','')||'text';
    pre.id=scope+'-code-'+item.id+'-'+index;
-   if(['output','console'].includes(language))return;
    const wrapper=document.createElement('div');wrapper.className='book-code';
    const button=document.createElement('button');button.type='button';button.className='button small';
-   button.dataset.bookCopy=pre.id;button.textContent=['sh','powershell','bat'].includes(language)?'复制命令':'复制代码';
+   button.dataset.bookCopy=pre.id;button.textContent=['output','console'].includes(language)?'复制输出':['sh','powershell','bat'].includes(language)?'复制命令':'复制代码';
+   button.setAttribute('aria-label',`复制${item.title}的第 ${index+1} 段${['output','console'].includes(language)?'输出':'代码'}`);
    pre.replaceWith(wrapper);wrapper.append(button,pre);
   });
   return `<article class="markdown book-prose" data-book-prose="${escape(item.id)}">${content.innerHTML}</article>`;

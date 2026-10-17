@@ -62,7 +62,7 @@
       label.textContent=isOutput?'输出或界面示意 · 用来对照结果':['text','plaintext'].includes(language)?'文字或结构示意 · 用来阅读对照，按正文说明使用':language==='psql'?'psql 客户端命令 · 在已连接数据库的 SQL Shell 中执行':language==='sql'?'SQL 语句 · 按正文说明保存为文件或在已连接数据库中执行':['sh','shell','powershell','bash'].includes(language)?'终端命令 · 按正文说明在正确目录执行':'代码示例 · 按正文说明新建文件或替换片段';
       pre.id=`${scope}-code-${item.id}-${i}`;
       pre.replaceWith(wrapper);wrapper.append(label);
-      if(!isOutput){const copy=document.createElement('button');copy.type='button';copy.className='button small';copy.dataset.knowledgeCopy=pre.id;copy.textContent='复制这段内容';copy.setAttribute('aria-label',`复制${item.title}的第 ${i+1} 段内容`);wrapper.append(copy);}
+      {const copy=document.createElement('button');copy.type='button';copy.className='button small';copy.dataset.knowledgeCopy=pre.id;copy.textContent=isOutput?'复制输出':'复制这段内容';copy.setAttribute('aria-label',`复制${item.title}的第 ${i+1} 段内容`);wrapper.append(copy);}
       wrapper.append(pre);
     });
     return `<div class="knowledge-guide ${scope === 'followup' ? 'followup-guide' : ''}" data-${scope}-guide="${escape(item.id)}"><nav class="knowledge-toc" aria-label="${escape(item.title)}章节"><p>按步骤读懂，再运行验证</p>${toc}</nav><article class="markdown knowledge-prose">${fragment.innerHTML}</article></div>`;

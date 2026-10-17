@@ -301,3 +301,6 @@ pre code { font-size: inherit; overflow-wrap: normal; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+.code-copy-block { min-width: 0; max-width: 100%; margin-block: 16px; }
+.code-copy-block > button { margin-bottom: 8px; }
+.code-copy-block > pre { margin-top: 0; }
